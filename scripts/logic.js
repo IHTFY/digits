@@ -1,4 +1,22 @@
-import { pickRandom } from "./utils.js";
+import { getNRandElements, pickRandom } from "./utils.js";
+
+/* Bank of numbers for each puzzle */
+const NUMBERBANKS = [
+  [1, 2, 3, 4, 5, 7, 9, 10, 11, 15],
+  [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 25],
+  [3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 25],
+  [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 20, 25],
+  [3, 5, 7, 9, 11, 12, 13, 15, 18, 19, 20, 23, 25],
+];
+
+/* Generate the input numbers for each puzzle */
+const generateNumLists = (banks = NUMBERBANKS, quantity = 6) => {
+  const numLists = banks.map((a) =>
+    getNRandElements(a, quantity).sort((a, b) => a - b)
+  );
+  numLists[0][5] = 25; // Puzzle 1 always has 25 as the last element
+  return numLists;
+};
 
 /**
  * Give the arithmetic result and reject negatives and fractions
@@ -92,4 +110,4 @@ const generatePuzzle = (
   }
 };
 
-export { OPERATORS, generatePuzzle, operate };
+export { NUMBERBANKS, OPERATORS, generateNumLists, generatePuzzle, operate };
