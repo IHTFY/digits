@@ -1,23 +1,12 @@
-import { generatePuzzle } from "./logic.js";
-import { getNRandElements } from "./utils.js";
+import { generateNumLists, generatePuzzle } from "./logic.js";
 
 /**
  * Initialize Materialize components
  */
 M.AutoInit();
 
-/* Bank of numbers for each puzzle */
-const SETS = [
-  [1, 2, 3, 4, 5, 7, 9, 10, 11, 15],
-  [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 25],
-  [3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 25],
-  [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 20, 25],
-  [3, 5, 7, 9, 11, 12, 13, 15, 18, 19, 20, 23, 25],
-];
-
-/* Generate the input numbers for each puzzle */
-const numLists = SETS.map((a) => getNRandElements(a, 6).sort((a, b) => a - b));
-numLists[0][5] = 25; // Puzzle 1 always has 25 as the last element
+/* Generate 5 sets of 6 input numbers */
+const numLists = generateNumLists();
 
 /**
  * Generates the target numbers and solutions for each puzzle
