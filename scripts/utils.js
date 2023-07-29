@@ -9,8 +9,8 @@ const getDateSeed = () => {
 
 /**
  * A seeded PRNG
- * @param {number} a
- * @returns
+ * @param {number} a a seed number
+ * @returns {function} a PRNG starting with the seeded random
  */
 const mulberry32 = (a) => {
   return () => {
