@@ -49,7 +49,8 @@ jobs:
 
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: 'https//digits.ihtfy.com'
+      # url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Deploy
