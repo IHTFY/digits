@@ -77,76 +77,65 @@
 	<table class="numList">
 		<tbody>
 			<tr>
-				<td
-					><button class="outline" data-value={puzzleData[0][0]} on:click={addToSelected}
-						>{puzzleData[0][0]}</button
-					></td
-				>
-				<td
-					><button class="outline" data-value={puzzleData[0][1]} on:click={addToSelected}
-						>{puzzleData[0][1]}</button
-					></td
-				>
-				<td
-					><button class="outline" data-value={puzzleData[0][2]} on:click={addToSelected}
-						>{puzzleData[0][2]}</button
-					></td
-				>
+				{#each puzzleData[0] as num, i}
+					<!-- NOTE there might be a better way to do this, probably numpad component, but handler is funky -->
+					{#if i < 3}
+						<td>
+							<button class="outline" data-value={num} on:click={addToSelected}>
+								{num}
+							</button>
+						</td>
+					{/if}
+				{/each}
 			</tr>
 			<tr>
-				<td
-					><button class="outline" data-value={puzzleData[0][3]} on:click={addToSelected}
-						>{puzzleData[0][3]}</button
-					></td
-				>
-				<td
-					><button class="outline" data-value={puzzleData[0][4]} on:click={addToSelected}
-						>{puzzleData[0][4]}</button
-					></td
-				>
-				<td
-					><button class="outline" data-value={puzzleData[0][5]} on:click={addToSelected}
-						>{puzzleData[0][5]}</button
-					></td
-				>
+				{#each puzzleData[0] as num, i}
+					{#if i >= 3}
+						<td>
+							<button class="outline" data-value={num} on:click={addToSelected}>
+								{num}
+							</button>
+						</td>
+					{/if}
+				{/each}
 			</tr>
 		</tbody>
 	</table>
 	<table class="operators">
 		<tbody>
 			<tr>
-				<td
-					><button class="secondary" data-value="undo" on:click={addToSelected}
-						><RewindIcon size="3x" /></button
-					></td
-				>
-				<td
-					><button class="contrast" data-value="plus" on:click={addToSelected}
-						><PlusIcon size="3x" /></button
-					></td
-				>
-				<td
-					><button class="contrast" data-value="minus" on:click={addToSelected}
-						><MinusIcon size="3x" /></button
-					></td
-				>
+				<td>
+					<button class="secondary" data-value="undo" on:click={addToSelected}>
+						<RewindIcon size="3x" />
+					</button>
+				</td>
+				<td>
+					<button class="contrast" data-value="plus" on:click={addToSelected}>
+						<PlusIcon size="3x" />
+					</button>
+				</td>
+				<td>
+					<button class="contrast" data-value="minus" on:click={addToSelected}>
+						<MinusIcon size="3x" />
+					</button>
+				</td>
 			</tr>
 			<tr>
-				<td
-					><button class="secondary" data-value="reset" on:click={addToSelected}
-						><SkipBackIcon size="3x" /></button
-					></td
-				>
-				<td
-					><button class="contrast" data-value="times" on:click={addToSelected}
-						><XIcon size="3x" /></button
-					></td
-				>
-				<td
-					><button class="contrast" data-value="divide" on:click={addToSelected}
-						><DivideIcon size="3x" /></button
-					></td
-				>
+				<td>
+					<button class="secondary" data-value="reset" on:click={addToSelected}>
+						<SkipBackIcon size="3x" />
+					</button>
+				</td>
+				<td>
+					<button class="contrast" data-value="times" on:click={addToSelected}>
+						<XIcon size="3x" />
+					</button>
+				</td>
+				<td>
+					<button class="contrast" data-value="divide" on:click={addToSelected}>
+						<DivideIcon size="3x" />
+					</button>
+				</td>
 			</tr>
 		</tbody>
 	</table>
@@ -179,5 +168,20 @@
 	table td {
 		padding: 1%;
 		border-bottom: none;
+	}
+
+	#puzzle .numList {
+		margin: 0px;
+		/* HACK should probably make number components and get the padding in there */
+		transform: scale(0.85) translate(0, -10%);
+	}
+	#puzzle .operators {
+		margin: 0;
+		/* HACK */
+		transform: scale(0.85) translate(0, -20%);
+	}
+	#puzzle {
+		/* HACK */
+		margin-bottom: -20%;
 	}
 </style>
