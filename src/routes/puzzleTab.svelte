@@ -22,9 +22,11 @@
 	.active {
 		background-color: var(--primary);
 		border-radius: 1em;
+		cursor: auto;
 	}
 	td {
 		text-align: center;
 		border-bottom: none;
+		cursor: pointer;
 	}
 </style>

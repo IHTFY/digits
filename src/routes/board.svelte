@@ -7,7 +7,7 @@
 </script>
 
 <div class="grid">
-	<div>
+	<div class="puzzle-container">
 		<Puzzle puzzleData={puzzles[$currentPuzzle]} />
 	</div>
 	<div>
