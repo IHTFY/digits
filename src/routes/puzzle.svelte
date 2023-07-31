@@ -87,6 +87,34 @@
 				currentStep.result = -1;
 			}
 		}
+
+		// Update distance, stars
+		puzzleData.update((data) => {
+			const currentPuzzle = data[$currentPuzzleIndex];
+			currentPuzzle.distance = currentPuzzle.history
+				.at(-1)
+				.numsState.reduce(
+					(a, c) => Math.min(a, Math.abs(c - currentPuzzle.target)),
+					currentPuzzle.distance
+				);
+
+			currentPuzzle.stars =
+				currentPuzzle.distance < 26
+					? currentPuzzle.distance < 11
+						? currentPuzzle.distance === 0
+							? 3
+							: 2
+						: 1
+					: 0;
+
+			console.log(data.map((i) => i.stars));
+
+			return data;
+		});
+
+		// 		3 stars: The target number.
+		// 2 stars: 1 - 10 away from the target number.
+		// 1 star: 11 - 25 away from the target number.
 	}
 
 	/**
@@ -176,15 +204,17 @@
 			<tr>
 				{#each $puzzleData[$currentPuzzleIndex].history.at(-1).numsState.slice(3) as num, i}
 					<td>
-						<button
-							class="outline"
-							data-value={num}
-							hidden={num < 0}
-							disabled={currentStep.firstIndex == i + 3 || currentStep.secondIndex == i + 3}
-							on:click={() => buttonHandler(num, i + 3)}
-						>
-							{num}
-						</button>
+						<div>
+							<button
+								class="outline"
+								data-value={num}
+								hidden={num < 0}
+								disabled={currentStep.firstIndex == i + 3 || currentStep.secondIndex == i + 3}
+								on:click={() => buttonHandler(num, i + 3)}
+							>
+								{num}
+							</button>
+						</div>
 					</td>
 				{/each}
 			</tr>
