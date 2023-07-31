@@ -16,7 +16,7 @@
 				<!-- TODO get stars from local storage/store -->
 				<PuzzleTab
 					targetNumber={puzzle.target}
-					stars={$puzzleData[$currentPuzzleIndex].stars}
+					stars={puzzle.stars}
 					active={$currentPuzzleIndex === i}
 					handler={() => currentPuzzleIndex.set(i)}
 				/>
