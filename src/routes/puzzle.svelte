@@ -1,6 +1,6 @@
 <script>
 	// @ts-nocheck
-
+	import { operate } from '$lib/logic';
 	import { selected } from '$lib/stores';
 	import { onMount } from 'svelte';
 	import {
@@ -14,6 +14,7 @@
 
 	//initialize handler
 	let clearUnused = () => {};
+	let blip1, blip2, blip3, blip4;
 
 	$: {
 		//parse/compile selected array
@@ -31,6 +32,10 @@
 				if (!parseInt($selected[2])) {
 					selected.update((val) => [val[0], val[2]]); // overwrite operator
 				} else {
+					const result = operate($selected[1], $selected[0], $selected[2]);
+					if (result) {
+						console.log(result);
+					}
 					//TODO try operation, update
 					selected.set([]);
 				}
@@ -44,6 +49,11 @@
 	}
 
 	onMount(() => {
+		blip1 = new Audio('/blips/1.mp3');
+		blip2 = new Audio('/blips/2.mp3');
+		blip3 = new Audio('/blips/3.mp3');
+		blip4 = new Audio('/blips/4.mp3');
+
 		//redefine this handler which depends on document
 		clearUnused = () => {
 			document.querySelectorAll('button[disabled]').forEach((btn) => {
@@ -63,6 +73,21 @@
 		const buttonValue = button.getAttribute('data-value');
 		button.setAttribute('disabled', '');
 		selected.update((val) => [...val, buttonValue]);
+		if (Number.isInteger(parseInt(buttonValue))) {
+			blip1.play();
+		} else {
+			switch (buttonValue) {
+				case 'reset':
+					blip2.play();
+					break;
+				case 'undo':
+					blip4.play();
+					break;
+				default:
+					// operator
+					blip3.play();
+			}
+		}
 	};
 
 	/**
@@ -77,26 +102,21 @@
 	<table class="numList">
 		<tbody>
 			<tr>
-				{#each puzzleData[0] as num, i}
-					<!-- NOTE there might be a better way to do this, probably numpad component, but handler is funky -->
-					{#if i < 3}
-						<td>
-							<button class="outline" data-value={num} on:click={addToSelected}>
-								{num}
-							</button>
-						</td>
-					{/if}
+				{#each puzzleData[0].slice(0, 3) as num}
+					<td>
+						<button class="outline" data-value={num} on:click={addToSelected}>
+							{num}
+						</button>
+					</td>
 				{/each}
 			</tr>
 			<tr>
-				{#each puzzleData[0] as num, i}
-					{#if i >= 3}
-						<td>
-							<button class="outline" data-value={num} on:click={addToSelected}>
-								{num}
-							</button>
-						</td>
-					{/if}
+				{#each puzzleData[0].slice(3) as num}
+					<td>
+						<button class="outline" data-value={num} on:click={addToSelected}>
+							{num}
+						</button>
+					</td>
 				{/each}
 			</tr>
 		</tbody>
@@ -159,6 +179,7 @@
 	}
 
 	.numList button {
+		color: var(--contrast);
 		min-width: 2em; /* keeps buttons same size, regardless if 1 or 2 digits. 1/2 of font size i think*/
 		font-size: 4em;
 		font-weight: 800;
@@ -176,12 +197,8 @@
 		transform: scale(0.85) translate(0, -10%);
 	}
 	#puzzle .operators {
-		margin: 0;
 		/* HACK */
-		transform: scale(0.85) translate(0, -20%);
-	}
-	#puzzle {
-		/* HACK */
-		margin-bottom: -20%;
+		margin: -20% 0 0 0;
+		transform: scale(0.85);
 	}
 </style>
