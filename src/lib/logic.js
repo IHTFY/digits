@@ -23,19 +23,27 @@ const generateNumLists = (banks = NUMBERBANKS, quantity = 6) => {
 
 /**
  * Give the arithmetic result and reject negatives and fractions
- * @param {"+"|"*"|"-"|"/"} operator The arithmetic operator
+ * @param {"+"|"*"|"-"|"/"|"plus"|"times"|"minus"|"divide"} operator The arithmetic operator
  * @param {number} a The first number
  * @param {number} b The second number
  * @returns {number|null} The numeric result or null if invalid
  */
 const operate = (operator, a, b) => {
+	// @ts-ignore
+	a = parseInt(a);
+	// @ts-ignore
+	b = parseInt(b);
 	switch (operator) {
+		case 'plus':
 		case '+':
 			return a + b;
+		case 'times':
 		case '*':
 			return a * b;
+		case 'minus':
 		case '-':
 			return a > b ? a - b : null;
+		case 'divide':
 		case '/':
 			return b < 1 || (a / b) % 1 ? null : a / b;
 		default:
@@ -55,7 +63,7 @@ const OPERATORS = ['+', '-', '*', '/'];
  * @param {number} maxOps The maximum number of operations in our solution
  * @returns {[number, string[]]} [The target number,[the steps for a solution]]
  */
-const generatePuzzle = (numList, minTarget, maxTarget, minOps = 2, maxOps = 5) => {
+const generatePuzzle = (numList, minTarget, maxTarget, minOps = 2, maxOps = 4) => {
 	let nums = [...numList];
 	let ops = 0;
 	let steps = [];

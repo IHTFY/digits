@@ -23,6 +23,7 @@
 		background-color: var(--primary);
 		border-radius: 1em;
 		cursor: auto;
+		color: var(--contrast);
 	}
 	td {
 		text-align: center;
