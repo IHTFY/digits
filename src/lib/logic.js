@@ -23,7 +23,7 @@ const generateNumLists = (banks = NUMBERBANKS, quantity = 6) => {
 
 /**
  * Give the arithmetic result and reject negatives and fractions
- * @param {"+"|"*"|"-"|"/"|"plus"|"times"|"minus"|"divide"} operator The arithmetic operator
+ * @param {string} operator The arithmetic operator
  * @param {number} a The first number
  * @param {number} b The second number
  * @returns {number|null} The numeric result or null if invalid
@@ -42,7 +42,7 @@ const operate = (operator, a, b) => {
 			return a * b;
 		case 'minus':
 		case '-':
-			return a > b ? a - b : null;
+			return a >= b ? a - b : null;
 		case 'divide':
 		case '/':
 			return b < 1 || (a / b) % 1 ? null : a / b;
