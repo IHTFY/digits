@@ -1,6 +1,5 @@
 <script>
-	import { puzzles } from '$lib/getPuzzle';
-	import { currentPuzzle } from '$lib/stores';
+	import { currentPuzzleIndex, puzzleData } from '$lib/stores';
 	import Operations from './operations.svelte';
 	import Puzzle from './puzzle.svelte';
 	import PuzzleTab from './puzzleTab.svelte';
@@ -8,18 +7,18 @@
 
 <div class="grid">
 	<div class="puzzle-container">
-		<Puzzle puzzleData={puzzles[$currentPuzzle]} />
+		<Puzzle />
 	</div>
 	<div>
 		<!-- <div id="puzzleList" class="grid"> -->
 		<table>
-			{#each puzzles as puzzle, i}
+			{#each $puzzleData as puzzle, i}
 				<!-- TODO get stars from local storage/store -->
 				<PuzzleTab
-					targetNumber={puzzle[1]}
-					stars={2}
-					active={$currentPuzzle === i}
-					handler={() => currentPuzzle.set(i)}
+					targetNumber={puzzle.target}
+					stars={$puzzleData[$currentPuzzleIndex].stars}
+					active={$currentPuzzleIndex === i}
+					handler={() => currentPuzzleIndex.set(i)}
 				/>
 			{/each}
 		</table>

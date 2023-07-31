@@ -1,7 +1,6 @@
 <script>
-	// @ts-nocheck
 	import { operate } from '$lib/logic';
-	import { selected } from '$lib/stores';
+	import { currentPuzzleIndex, puzzleData } from '$lib/stores';
 	import { onMount } from 'svelte';
 	import {
 		DivideIcon,
@@ -12,108 +11,178 @@
 		XIcon
 	} from 'svelte-feather-icons';
 
-	//initialize handler
-	let clearUnused = () => {};
-	let blip1, blip2, blip3, blip4;
-
-	$: {
-		//parse/compile selected array
-		if ($selected.at(-1) === 'reset') {
-			selected.set([]);
-		}
-		switch ($selected.length) {
-			case 1:
-				if (!parseInt($selected[0])) selected.set([]); // if just an operator, reset
-				break;
-			case 2:
-				if (parseInt($selected[1])) selected.update((val) => [val[1]]); // overwrite 1st number
-				break;
-			case 3:
-				if (!parseInt($selected[2])) {
-					selected.update((val) => [val[0], val[2]]); // overwrite operator
-				} else {
-					const result = operate($selected[1], $selected[0], $selected[2]);
-					if (result) {
-						console.log(result);
-					}
-					//TODO try operation, update
-					selected.set([]);
-				}
-				break;
-			default:
-				selected.update((val) => val.slice(-3)); // trim to length 3
-				break;
-		}
-
-		clearUnused(); // re-enable all unused buttons
-	}
+	//initialize sounds
+	/**
+	 * @type {{ play: () => void; currentTime: number }[]}
+	 */
+	const blips = [];
 
 	onMount(() => {
-		blip1 = new Audio('/blips/1.mp3');
-		blip2 = new Audio('/blips/2.mp3');
-		blip3 = new Audio('/blips/3.mp3');
-		blip4 = new Audio('/blips/4.mp3');
-
-		//redefine this handler which depends on document
-		clearUnused = () => {
-			document.querySelectorAll('button[disabled]').forEach((btn) => {
-				// if button isn't in selected, re-enable
-				if (!$selected.includes(btn.getAttribute('data-value'))) btn.removeAttribute('disabled');
-			});
-		};
+		for (let i = 0; i < 4; i++) {
+			blips.push(new Audio(`/blips/${i}.mp3`));
+		}
 	});
 
 	/**
-	 * Adds button value to the "selected" array
-	 * @param {PointerEvent} event The click event
+	 *
+	 * @param {{ numList: number[]; target: number; stars: number; history:
+	 * { firstNum: number; operation: string; secondNum: number; result: number;
+	 * firstIndex: number; secondIndex: number; numsState: number[]; }[];
+	 * solution: string[]; revealed: boolean; tabIndex: number; distance: number; }[]} data all puzzle data
+	 * @param {number} index
 	 */
-	const addToSelected = (event) => {
-		/** @ts-ignore @type {HTMLButtonElement} */
-		const button = event.currentTarget;
-		const buttonValue = button.getAttribute('data-value');
-		button.setAttribute('disabled', '');
-		selected.update((val) => [...val, buttonValue]);
-		if (Number.isInteger(parseInt(buttonValue))) {
-			blip1.play();
+
+	let currentHistory = $puzzleData[$currentPuzzleIndex].history;
+	let currentStep = currentHistory[currentHistory.length - 1];
+
+	// initialize history
+	if (!currentHistory[0].numsState.some((/** @type {number} */ elt) => elt >= 0)) {
+		puzzleData.reset($currentPuzzleIndex);
+	}
+
+	$: {
+		currentHistory = $puzzleData[$currentPuzzleIndex].history;
+		currentStep = currentHistory[currentHistory.length - 1];
+
+		// initialize history
+		if (!currentHistory[0].numsState.some((/** @type {number} */ elt) => elt >= 0)) {
+			puzzleData.reset($currentPuzzleIndex);
+		}
+
+		if (currentStep.firstNum >= 0 && currentStep.operation && currentStep.secondNum >= 0) {
+			const result = operate(currentStep.operation, currentStep.firstNum, currentStep.secondNum);
+			if (result || result === 0) {
+				currentStep.result = result;
+
+				const newState = [...currentStep.numsState];
+				newState[currentStep.firstIndex] = -1;
+				newState[currentStep.secondIndex] = currentStep.result;
+
+				const newStep = {
+					firstNum: -1,
+					operation: '',
+					secondNum: -1,
+					result: -1,
+					firstIndex: -1,
+					secondIndex: -1,
+					numsState: newState
+				};
+
+				// currentHistory.push(newStep);
+				puzzleData.update((data) => {
+					data[$currentPuzzleIndex].history.push(newStep);
+					return data;
+				});
+				// @ts-ignore
+				currentStep = currentHistory.at(-1);
+				console.log('set current state to last History');
+
+				//TODO animate and update, maybe not here
+			} else {
+				currentStep.firstNum = -1;
+				currentStep.operation = '';
+				currentStep.secondNum = -1;
+				currentStep.firstIndex = -1;
+				currentStep.secondIndex = -1;
+				currentStep.result = -1;
+			}
+		}
+	}
+
+	/**
+	 *
+	 * @param {number | string} buttonValue
+	 * @param {number} buttonIndex
+	 */
+	const buttonHandler = (buttonValue, buttonIndex = -1) => {
+		console.log('firstNum:', $puzzleData[$currentPuzzleIndex].history.at(-1).firstNum);
+		if (buttonValue === 'reset') {
+			puzzleData.reset($currentPuzzleIndex);
+		} else if (buttonValue === 'undo') {
+			if (currentHistory.length > 1) {
+				puzzleData.update((data) => {
+					data[$currentPuzzleIndex].history.pop();
+					const prevState = data[$currentPuzzleIndex].history.at(-1);
+					prevState.firstNum = -1;
+					prevState.operation = '';
+					prevState.secondNum = -1;
+					prevState.firstIndex = -1;
+					prevState.secondIndex = -1;
+					prevState.result = -1;
+					return data;
+				});
+				// @ts-ignore
+				currentStep = currentHistory.at(-1);
+				console.log('currentStep:', currentStep, 'hist len:', currentHistory.length);
+			}
+		} else if (Number.isInteger(buttonValue)) {
+			if (!(currentStep.firstNum >= 0) || !currentStep.operation.length) {
+				// @ts-ignore
+				currentStep.firstNum = buttonValue;
+				currentStep.firstIndex = buttonIndex;
+			} else {
+				// @ts-ignore
+				currentStep.secondNum = buttonValue;
+				currentStep.secondIndex = buttonIndex;
+			}
+		} else {
+			if (currentStep.firstNum >= 0) {
+				// @ts-ignore
+				currentStep.operation = buttonValue;
+			}
+		}
+
+		let soundIndex = 0;
+		if (Number.isInteger(buttonValue)) {
+			soundIndex = 2;
 		} else {
 			switch (buttonValue) {
 				case 'reset':
-					blip2.play();
+					soundIndex = 1;
 					break;
 				case 'undo':
-					blip4.play();
+					soundIndex = 3;
 					break;
-				default:
-					// operator
-					blip3.play();
 			}
 		}
+		blips[soundIndex].currentTime = 0;
+		blips[soundIndex].play();
+		console.log('endclick1stnum:', $puzzleData[$currentPuzzleIndex].history.at(-1).firstNum);
 	};
-
-	/**
-	 * @type {[number[], number, string[]]}
-	 */
-	export let puzzleData;
 </script>
 
 <div id="puzzle">
-	<h1 id="targetNumber">{puzzleData[1]}</h1>
+	<h1 id="targetNumber">{$puzzleData[$currentPuzzleIndex].target}</h1>
 
 	<table class="numList">
 		<tbody>
 			<tr>
-				{#each puzzleData[0].slice(0, 3) as num}
+				{#each $puzzleData[$currentPuzzleIndex].history.at(-1).numsState.slice(0, 3) as num, i}
 					<td>
-						<button class="outline" data-value={num} on:click={addToSelected}>
+						<button
+							class="outline"
+							data-value={num}
+							disabled={currentStep.firstIndex == i || currentStep.secondIndex == i}
+							hidden={num < 0}
+							on:click={() => {
+								buttonHandler(num, i);
+							}}
+						>
 							{num}
 						</button>
 					</td>
 				{/each}
 			</tr>
 			<tr>
-				{#each puzzleData[0].slice(3) as num}
+				{#each $puzzleData[$currentPuzzleIndex].history.at(-1).numsState.slice(3) as num, i}
 					<td>
-						<button class="outline" data-value={num} on:click={addToSelected}>
+						<button
+							class="outline"
+							data-value={num}
+							hidden={num < 0}
+							disabled={currentStep.firstIndex == i + 3 || currentStep.secondIndex == i + 3}
+							on:click={() => buttonHandler(num, i + 3)}
+						>
 							{num}
 						</button>
 					</td>
@@ -125,34 +194,54 @@
 		<tbody>
 			<tr>
 				<td>
-					<button class="secondary" data-value="undo" on:click={addToSelected}>
+					<button class="secondary" data-value="undo" on:click={() => buttonHandler('undo')}>
 						<RewindIcon size="3x" />
 					</button>
 				</td>
 				<td>
-					<button class="contrast" data-value="plus" on:click={addToSelected}>
+					<button
+						class="contrast"
+						data-value="plus"
+						disabled={currentStep.operation === 'plus'}
+						on:click={() => buttonHandler('plus')}
+					>
 						<PlusIcon size="3x" />
 					</button>
 				</td>
 				<td>
-					<button class="contrast" data-value="minus" on:click={addToSelected}>
+					<button
+						class="contrast"
+						data-value="minus"
+						disabled={currentStep.operation === 'minus'}
+						on:click={() => buttonHandler('minus')}
+					>
 						<MinusIcon size="3x" />
 					</button>
 				</td>
 			</tr>
 			<tr>
 				<td>
-					<button class="secondary" data-value="reset" on:click={addToSelected}>
+					<button class="secondary" data-value="reset" on:click={() => buttonHandler('reset')}>
 						<SkipBackIcon size="3x" />
 					</button>
 				</td>
 				<td>
-					<button class="contrast" data-value="times" on:click={addToSelected}>
+					<button
+						class="contrast"
+						data-value="times"
+						disabled={currentStep.operation === 'times'}
+						on:click={() => buttonHandler('times')}
+					>
 						<XIcon size="3x" />
 					</button>
 				</td>
 				<td>
-					<button class="contrast" data-value="divide" on:click={addToSelected}>
+					<button
+						class="contrast"
+						data-value="divide"
+						disabled={currentStep.operation === 'divide'}
+						on:click={() => buttonHandler('divide')}
+					>
 						<DivideIcon size="3x" />
 					</button>
 				</td>
@@ -180,10 +269,15 @@
 
 	.numList button {
 		color: var(--contrast);
+		/* TODO get it working for up to 5 digits, maybe 6. should just be fixed size */
 		min-width: 2em; /* keeps buttons same size, regardless if 1 or 2 digits. 1/2 of font size i think*/
 		font-size: 4em;
 		font-weight: 800;
 		border-radius: 50%;
+	}
+
+	table * {
+		flex-shrink: 0;
 	}
 
 	table td {
@@ -191,14 +285,9 @@
 		border-bottom: none;
 	}
 
-	#puzzle .numList {
-		margin: 0px;
+	#puzzle {
 		/* HACK should probably make number components and get the padding in there */
-		transform: scale(0.85) translate(0, -10%);
-	}
-	#puzzle .operators {
-		/* HACK */
-		margin: -20% 0 0 0;
-		transform: scale(0.85);
+		transform: scale(0.6) translate(0, -35%);
+		margin-bottom: -70%;
 	}
 </style>
