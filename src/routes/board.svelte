@@ -35,7 +35,7 @@
 		totalStars.set($puzzleData.reduce((a, c) => a + c.stars, 0));
 
 		level = ['Beginner', 'Moving Up', 'Solid', 'Nice', 'Great', 'Amazing', 'Genius'][
-			Math.round($totalStars === 15 ? 16 : $totalStars / 3)
+			Math.round(($totalStars === 15 ? 16 : $totalStars) / 3)
 		];
 
 		saveData();
