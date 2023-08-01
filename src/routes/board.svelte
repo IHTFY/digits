@@ -49,7 +49,6 @@
 	<div>
 		<table>
 			{#each $puzzleData as puzzle, i}
-				<!-- TODO get stars from local storage/store -->
 				<PuzzleTab
 					targetNumber={puzzle.target}
 					stars={puzzle.stars}
