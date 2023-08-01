@@ -57,4 +57,4 @@ const shuffle = (a, inplace = false, seeded = true) => {
  */
 const getNRandElements = (arr, n) => shuffle([...arr]).slice(0, n);
 
-export { getNRandElements, pickRandom, shuffle };
+export { getDateSeed, getNRandElements, pickRandom, shuffle };
