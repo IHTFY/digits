@@ -25,15 +25,6 @@
 		}
 	});
 
-	/**
-	 *
-	 * @param {{ numList: number[]; target: number; stars: number; history:
-	 * { firstNum: number; operation: string; secondNum: number; result: number;
-	 * firstIndex: number; secondIndex: number; numsState: number[]; }[];
-	 * solution: string[]; revealed: boolean; tabIndex: number; distance: number; }[]} data all puzzle data
-	 * @param {number} index
-	 */
-
 	let currentHistory = $puzzleData[$currentPuzzleIndex].history;
 	let currentStep = currentHistory[currentHistory.length - 1];
 
@@ -46,6 +37,69 @@
 		duration: 250,
 		easing: cubicOut
 	});
+
+	/**
+	 *
+	 * @param {number | string} buttonValue
+	 * @param {number} buttonIndex
+	 */
+	const buttonHandler = (buttonValue, buttonIndex = -1) => {
+		// Get current aliases
+		currentHistory = $puzzleData[$currentPuzzleIndex].history;
+		currentStep = currentHistory[currentHistory.length - 1];
+
+		if (buttonValue === 'reset') {
+			puzzleData.reset($currentPuzzleIndex);
+		} else if (buttonValue === 'undo') {
+			if (currentHistory.length > 1) {
+				puzzleData.update((data) => {
+					data[$currentPuzzleIndex].history.pop();
+					const prevState = data[$currentPuzzleIndex].history.at(-1);
+					prevState.firstIndex = -1;
+					prevState.firstNum = -1;
+					prevState.operation = '';
+					prevState.secondIndex = -1;
+					prevState.secondNum = -1;
+					prevState.result = -1;
+					return data;
+				});
+				// @ts-ignore
+				currentStep = currentHistory.at(-1);
+			}
+		} else if (Number.isInteger(buttonValue)) {
+			if (!(currentStep.firstNum >= 0) || !currentStep.operation.length) {
+				// @ts-ignore
+				currentStep.firstNum = buttonValue;
+				currentStep.firstIndex = buttonIndex;
+			} else {
+				// @ts-ignore
+				currentStep.secondNum = buttonValue;
+				currentStep.secondIndex = buttonIndex;
+			}
+		} else {
+			if (currentStep.firstNum >= 0) {
+				// @ts-ignore
+				currentStep.operation = buttonValue;
+			}
+		}
+
+		// Sound Effects
+		let soundIndex = 0;
+		if (Number.isInteger(buttonValue)) {
+			soundIndex = 2;
+		} else {
+			switch (buttonValue) {
+				case 'reset':
+					soundIndex = 1;
+					break;
+				case 'undo':
+					soundIndex = 3;
+					break;
+			}
+		}
+		blips[soundIndex].currentTime = 0;
+		blips[soundIndex].play();
+	};
 
 	$: {
 		targetNumber.set($puzzleData[$currentPuzzleIndex].target);
@@ -76,7 +130,6 @@
 					numsState: newState
 				};
 
-				// currentHistory.push(newStep);
 				puzzleData.update((data) => {
 					data[$currentPuzzleIndex].history.push(newStep);
 					return data;
@@ -115,67 +168,6 @@
 			return data;
 		});
 	}
-
-	/**
-	 *
-	 * @param {number | string} buttonValue
-	 * @param {number} buttonIndex
-	 */
-	const buttonHandler = (buttonValue, buttonIndex = -1) => {
-		console.log('firstNum:', $puzzleData[$currentPuzzleIndex].history.at(-1).firstNum);
-		if (buttonValue === 'reset') {
-			puzzleData.reset($currentPuzzleIndex);
-		} else if (buttonValue === 'undo') {
-			if (currentHistory.length > 1) {
-				puzzleData.update((data) => {
-					data[$currentPuzzleIndex].history.pop();
-					const prevState = data[$currentPuzzleIndex].history.at(-1);
-					prevState.firstIndex = -1;
-					prevState.firstNum = -1;
-					prevState.operation = '';
-					prevState.secondIndex = -1;
-					prevState.secondNum = -1;
-					prevState.result = -1;
-					return data;
-				});
-				// @ts-ignore
-				currentStep = currentHistory.at(-1);
-				console.log('currentStep:', currentStep, 'hist len:', currentHistory.length);
-			}
-		} else if (Number.isInteger(buttonValue)) {
-			if (!(currentStep.firstNum >= 0) || !currentStep.operation.length) {
-				// @ts-ignore
-				currentStep.firstNum = buttonValue;
-				currentStep.firstIndex = buttonIndex;
-			} else {
-				// @ts-ignore
-				currentStep.secondNum = buttonValue;
-				currentStep.secondIndex = buttonIndex;
-			}
-		} else {
-			if (currentStep.firstNum >= 0) {
-				// @ts-ignore
-				currentStep.operation = buttonValue;
-			}
-		}
-
-		let soundIndex = 0;
-		if (Number.isInteger(buttonValue)) {
-			soundIndex = 2;
-		} else {
-			switch (buttonValue) {
-				case 'reset':
-					soundIndex = 1;
-					break;
-				case 'undo':
-					soundIndex = 3;
-					break;
-			}
-		}
-		blips[soundIndex].currentTime = 0;
-		blips[soundIndex].play();
-		console.log('endclick1stnum:', $puzzleData[$currentPuzzleIndex].history.at(-1).firstNum);
-	};
 </script>
 
 <div id="puzzle">
@@ -205,11 +197,13 @@
 					<td>
 						<div>
 							<button
+								on:click={() => {
+									buttonHandler(num, i + 3);
+								}}
 								class="outline"
 								data-value={num}
 								hidden={num < 0}
 								disabled={currentStep.firstIndex == i + 3 || currentStep.secondIndex == i + 3}
-								on:click={() => buttonHandler(num, i + 3)}
 							>
 								{num}
 							</button>
