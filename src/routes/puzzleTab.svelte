@@ -9,9 +9,20 @@
 	export let active;
 	/** @type {any} */
 	export let handler;
+
+	let paused = true;
+	let currentTime = 0;
 </script>
 
-<td class:active on:click={handler}>
+<audio src="/blips/4.mp3" bind:paused bind:currentTime hidden />
+<td
+	class:active
+	on:click={() => {
+		handler();
+		currentTime = 0;
+		paused = active;
+	}}
+>
 	<div>{targetNumber}</div>
 	{#each { length: stars } as _, i}
 		<StarIcon />

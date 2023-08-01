@@ -38,13 +38,13 @@ const operate = (operator, a, b) => {
 		case '+':
 			return a + b;
 		case 'times':
-		case '*':
+		case '×':
 			return a * b;
 		case 'minus':
 		case '-':
 			return a >= b ? a - b : null;
 		case 'divide':
-		case '/':
+		case '÷':
 			return b < 1 || (a / b) % 1 ? null : a / b;
 		default:
 			return null;
@@ -52,7 +52,7 @@ const operate = (operator, a, b) => {
 };
 
 /* The available arithmetic operators for each puzzle  */
-const OPERATORS = ['+', '-', '*', '/'];
+const OPERATORS = ['+', '-', '×', '÷'];
 
 /**
  * Applies random operations to generate a target within the range

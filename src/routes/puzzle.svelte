@@ -15,7 +15,7 @@
 
 	//initialize sounds
 	/**
-	 * @type {{ play: () => void; currentTime: number }[]}
+	 * @type {HTMLAudioElement[]}
 	 */
 	const blips = [];
 

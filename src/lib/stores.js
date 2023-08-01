@@ -1,9 +1,9 @@
 import { puzzles } from '$lib/getPuzzle';
 import { writable } from 'svelte/store';
 
-export const theme = writable('light');
+const theme = writable('light');
 
-export const currentPuzzleIndex = writable(0);
+const currentPuzzleIndex = writable(0);
 
 const blankState = {
 	firstNum: -1,
@@ -49,4 +49,6 @@ function createPuzzles() {
 	};
 }
 
-export const puzzleData = createPuzzles();
+const puzzleData = createPuzzles();
+
+export { currentPuzzleIndex, puzzleData, theme };

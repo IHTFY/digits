@@ -16,8 +16,8 @@
 				{
 					plus: '+',
 					minus: '-',
-					times: '*',
-					divide: '/'
+					times: '×',
+					divide: '÷'
 				}[step.operation],
 				step.secondNum,
 				'=',
