@@ -28,7 +28,7 @@
 </script>
 
 <svelte:head>
-	<title>Numbercraft</title>
+	<title>Digits</title>
 </svelte:head>
 <div class="container">
 	<nav>
@@ -53,7 +53,7 @@
 			</li>
 		</ul>
 		<ul>
-			<li><strong>Numbercraft</strong></li>
+			<li><strong>Digits</strong></li>
 		</ul>
 		<ul>
 			<li>

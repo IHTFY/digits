@@ -7,11 +7,11 @@ export const currentPuzzleIndex = writable(0);
 
 const blankState = {
 	firstNum: -1,
+	firstIndex: -1,
 	operation: '',
 	secondNum: -1,
-	result: -1,
-	firstIndex: -1,
 	secondIndex: -1,
+	result: -1,
 	numsState: [-1, -1, -1, -1, -1, -1]
 };
 

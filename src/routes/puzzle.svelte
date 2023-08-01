@@ -10,6 +10,8 @@
 		SkipBackIcon,
 		XIcon
 	} from 'svelte-feather-icons';
+	import { cubicOut } from 'svelte/easing';
+	import { tweened } from 'svelte/motion';
 
 	//initialize sounds
 	/**
@@ -40,7 +42,13 @@
 		puzzleData.reset($currentPuzzleIndex);
 	}
 
+	const targetNumber = tweened(0, {
+		duration: 250,
+		easing: cubicOut
+	});
+
 	$: {
+		targetNumber.set($puzzleData[$currentPuzzleIndex].target);
 		currentHistory = $puzzleData[$currentPuzzleIndex].history;
 		currentStep = currentHistory[currentHistory.length - 1];
 
@@ -76,14 +84,12 @@
 				// @ts-ignore
 				currentStep = currentHistory.at(-1);
 				console.log('set current state to last History');
-
-				//TODO animate and update, maybe not here
 			} else {
+				currentStep.firstIndex = -1;
 				currentStep.firstNum = -1;
 				currentStep.operation = '';
-				currentStep.secondNum = -1;
-				currentStep.firstIndex = -1;
 				currentStep.secondIndex = -1;
+				currentStep.secondNum = -1;
 				currentStep.result = -1;
 			}
 		}
@@ -91,30 +97,23 @@
 		// Update distance, stars
 		puzzleData.update((data) => {
 			const currentPuzzle = data[$currentPuzzleIndex];
-			currentPuzzle.distance = currentPuzzle.history
-				.at(-1)
-				.numsState.reduce(
-					(a, c) => Math.min(a, Math.abs(c - currentPuzzle.target)),
-					currentPuzzle.distance
-				);
+			currentPuzzle.distance = currentPuzzle.history.at(-1).numsState.reduce(
+				/**
+				 * Min Distance
+				 * @param {number} a
+				 * @param {number} c
+				 */
+				(a, c) => Math.min(a, Math.abs(c - currentPuzzle.target)),
+				currentPuzzle.distance
+			);
 
-			currentPuzzle.stars =
-				currentPuzzle.distance < 26
-					? currentPuzzle.distance < 11
-						? currentPuzzle.distance === 0
-							? 3
-							: 2
-						: 1
-					: 0;
-
-			console.log(data.map((i) => i.stars));
+			// calculate stars
+			currentPuzzle.stars = currentPuzzle.revealed
+				? currentPuzzle.stars
+				: [25, 10, 0].filter((t) => currentPuzzle.distance <= t).length;
 
 			return data;
 		});
-
-		// 		3 stars: The target number.
-		// 2 stars: 1 - 10 away from the target number.
-		// 1 star: 11 - 25 away from the target number.
 	}
 
 	/**
@@ -131,11 +130,11 @@
 				puzzleData.update((data) => {
 					data[$currentPuzzleIndex].history.pop();
 					const prevState = data[$currentPuzzleIndex].history.at(-1);
+					prevState.firstIndex = -1;
 					prevState.firstNum = -1;
 					prevState.operation = '';
-					prevState.secondNum = -1;
-					prevState.firstIndex = -1;
 					prevState.secondIndex = -1;
+					prevState.secondNum = -1;
 					prevState.result = -1;
 					return data;
 				});
@@ -180,7 +179,7 @@
 </script>
 
 <div id="puzzle">
-	<h1 id="targetNumber">{$puzzleData[$currentPuzzleIndex].target}</h1>
+	<h1 id="targetNumber">{Math.round($targetNumber)}</h1>
 
 	<table class="numList">
 		<tbody>
@@ -288,6 +287,7 @@
 	}
 
 	button {
+		padding: 0;
 		border-width: thick;
 		aspect-ratio: 1;
 	}

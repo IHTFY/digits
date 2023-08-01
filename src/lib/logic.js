@@ -63,7 +63,7 @@ const OPERATORS = ['+', '-', '*', '/'];
  * @param {number} maxOps The maximum number of operations in our solution
  * @returns {[number, string[]]} [The target number,[the steps for a solution]]
  */
-const generatePuzzle = (numList, minTarget, maxTarget, minOps = 2, maxOps = 4) => {
+const generatePuzzle = (numList, minTarget, maxTarget, minOps = 3, maxOps = 4) => {
 	let nums = [...numList];
 	let ops = 0;
 	let steps = [];
