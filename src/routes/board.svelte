@@ -57,8 +57,17 @@
 				/>
 			{/each}
 		</table>
-		<ins>{level}</ins>
+		<ins data-tooltip={$totalStars + ' stars'} data-placement="right">{level}</ins>
 		<progress value={$totalStars} max="15" />
 		<Operations />
 	</div>
 </div>
+
+<style>
+	ins {
+		border-bottom: none;
+	}
+	ins:hover {
+		cursor: help;
+	}
+</style>

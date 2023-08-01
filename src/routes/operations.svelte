@@ -81,4 +81,8 @@
 		margin: 0;
 		padding: 0;
 	}
+
+	th[data-tooltip] {
+		border-bottom: none;
+	}
 </style>

@@ -40,5 +40,7 @@
 		text-align: center;
 		border-bottom: none;
 		cursor: pointer;
+		/* make tabs same width. Did trial/error to find 6em */
+		min-width: 6em;
 	}
 </style>
