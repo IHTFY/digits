@@ -1,5 +1,5 @@
 <script>
-	import { theme } from '$lib/stores';
+	import { modal, theme } from '$lib/stores';
 	import '@picocss/pico';
 	import {
 		GithubIcon,
@@ -11,13 +11,23 @@
 	} from 'svelte-feather-icons';
 
 	import Board from './board.svelte';
+	import Instructions from './instructions.svelte';
 
 	import { onMount } from 'svelte';
 
+	let openModal = () => {};
 	onMount(() => {
 		const storedTheme = window.localStorage.getItem('theme');
 		theme.update((val) => storedTheme || val);
 		document.documentElement.setAttribute('data-theme', $theme);
+
+		openModal = () => {
+			document.documentElement.classList.add('modal-is-open', 'modal-is-opening');
+			setTimeout(() => {
+				document.documentElement.classList.remove('modal-is-opening');
+			}, 400);
+			modal.set(true);
+		};
 	});
 
 	const toggleTheme = () => {
@@ -25,6 +35,8 @@
 		window.localStorage.setItem('theme', $theme);
 		document.documentElement.setAttribute('data-theme', $theme);
 	};
+
+	let showInstructions = false;
 </script>
 
 <svelte:head>
@@ -39,7 +51,7 @@
 				<ul role="listbox">
 					<li>
 						<!-- svelte-ignore a11y-missing-attribute -->
-						<a><InfoIcon /> How to Play</a>
+						<a href="#HowToPlay" on:click={openModal}><InfoIcon /> How to Play</a>
 					</li>
 					<li>
 						<a href="https://ihtfy.com" target="_blank"><HomeIcon /> IHTFY</a>
@@ -72,3 +84,5 @@
 		<Board />
 	</div>
 </div>
+
+<Instructions />
