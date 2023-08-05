@@ -50,5 +50,6 @@ function createPuzzles() {
 }
 
 const puzzleData = createPuzzles();
+const modal = writable(false);
 
-export { currentPuzzleIndex, puzzleData, theme };
+export { currentPuzzleIndex, modal, puzzleData, theme };
