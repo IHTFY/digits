@@ -51,7 +51,7 @@
 				<ul role="listbox">
 					<li>
 						<!-- svelte-ignore a11y-missing-attribute -->
-						<a href="#HowToPlay" on:click={openModal}><InfoIcon /> How to Play</a>
+						<a href="#instructions" on:click={openModal}><InfoIcon /> How to Play</a>
 					</li>
 					<li>
 						<a href="https://ihtfy.com" target="_blank"><HomeIcon /> IHTFY</a>
