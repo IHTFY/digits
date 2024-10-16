@@ -33,7 +33,7 @@
 <dialog open={$modal} id="instructions">
 	<article>
 		<header>
-			<a href="#Close" on:click={closeModal} aria-label="Close" class="close" />
+			<a href="#" on:click={closeModal} aria-label="Close" class="close" />
 			How To Play
 		</header>
 		<p>Combine numbers to reach the Target Number.</p>
