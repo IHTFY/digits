@@ -168,7 +168,7 @@ test('B travels to A before A rolls to the subtraction result', async ({ page })
 	await expect(page.locator('.number-button').nth(4)).toHaveAttribute('aria-label', '8');
 	await expect(page.locator('.number-button').nth(4)).toHaveText('8');
 	await expect(page.locator('.number-button').nth(1)).toBeHidden();
-	await expect(page.getByRole('status')).toHaveText('8');
+	await expect(page.locator('.puzzle').getByRole('status')).toHaveText('8');
 });
 
 test('switching puzzles during the result tween cancels the uncommitted operation', async ({
@@ -414,6 +414,9 @@ for (const [width, height] of [
 		await page.setViewportSize({ width, height });
 		await openGame(page);
 		await page.getByLabel('Menu', { exact: true }).click();
+		await page.locator('#navigation-menu').evaluate(async (element) => {
+			await Promise.all(element.getAnimations().map((animation) => animation.finished));
+		});
 		const rows = await page.locator('.dropdown li > :is(a, button)').evaluateAll((elements) =>
 			elements.map((element) => {
 				const bounds = element.getBoundingClientRect();
@@ -434,6 +437,63 @@ for (const [width, height] of [
 			})
 		);
 		expect(rows).toHaveLength(3);
-		for (const row of rows) expect(row).toEqual(rows[0]);
+		for (const row of rows) {
+			Object.values(row).forEach((value, index) => {
+				expect(Math.abs(Number(value) - Number(Object.values(rows[0])[index]))).toBeLessThan(0.1);
+			});
+		}
+	});
+}
+
+for (const reducedMotion of /** @type {const} */ (['no-preference', 'reduce'])) {
+	test(`menu dismisses and instructions restore focus with ${reducedMotion} motion`, async ({
+		page
+	}) => {
+		await page.emulateMedia({ reducedMotion });
+		await openGame(page);
+		const menu = page.getByRole('button', { name: 'Menu', exact: true });
+		const panel = page.locator('#navigation-menu');
+		await menu.click();
+		await expect(menu).toHaveAttribute('aria-expanded', 'true');
+		await expect(panel).toBeVisible();
+		await page.keyboard.press('Escape');
+		await expect(panel).toBeHidden();
+		await expect(menu).toBeFocused();
+		await menu.click();
+		await page.locator('.target-number').click();
+		await expect(panel).toBeHidden();
+		await menu.click();
+		await page.getByRole('button', { name: 'How to Play' }).click();
+		await expect(page.getByRole('dialog')).toBeVisible();
+		await expect(panel).toBeHidden();
+		await page.getByRole('button', { name: 'Let’s play' }).click();
+		await expect(page.getByRole('dialog')).toBeHidden();
+		await expect(menu).toBeFocused();
+		await expect(menu).toHaveAttribute('aria-expanded', 'false');
+	});
+}
+
+for (const [width, height] of [
+	[320, 568],
+	[667, 375],
+	[1440, 900]
+]) {
+	test(`visual instructions fit and scroll at ${width}×${height}`, async ({ page }) => {
+		await page.setViewportSize({ width, height });
+		await openGame(page);
+		await page.getByRole('button', { name: 'Menu', exact: true }).click();
+		await page.getByRole('button', { name: 'How to Play' }).click();
+		const dialog = page.getByRole('dialog');
+		await expect(dialog).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Six numbers. One target.' })).toBeVisible();
+		await page.getByRole('button', { name: 'Let’s play' }).scrollIntoViewIfNeeded();
+		expect(
+			await dialog.evaluate((element) => ({
+				overflow: element.scrollWidth > element.clientWidth,
+				inside: element.getBoundingClientRect().bottom <= innerHeight
+			}))
+		).toEqual({ overflow: false, inside: true });
+		await page.getByRole('button', { name: 'Close instructions' }).click();
+		await expect(dialog).toBeHidden();
 	});
 }

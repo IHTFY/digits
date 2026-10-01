@@ -77,6 +77,7 @@
 		background: var(--pico-contrast-background);
 		color: var(--pico-contrast-inverse);
 		box-shadow: 0 4px 16px rgb(0 0 0 / 0.3);
+		animation: content-arrive 180ms ease-out;
 	}
 	.update-prompt button {
 		margin: 0;
