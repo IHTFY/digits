@@ -6,6 +6,8 @@ const dev = process.argv.includes('dev');
 const config = {
 	kit: {
 		serviceWorker: {
+			// Registered manually so the app can offer updates (see src/routes/updatePrompt.svelte).
+			register: false,
 			// Deployment metadata and unused sound sources are not offline app assets.
 			files: (filepath) =>
 				!filepath
