@@ -168,7 +168,7 @@ test('B travels to A before A rolls to the subtraction result', async ({ page })
 	await expect(page.locator('.number-button').nth(4)).toHaveAttribute('aria-label', '8');
 	await expect(page.locator('.number-button').nth(4)).toHaveText('8');
 	await expect(page.locator('.number-button').nth(1)).toBeHidden();
-	await expect(page.getByRole('status')).toHaveText('8');
+	await expect(page.locator('.puzzle').getByRole('status')).toHaveText('8');
 });
 
 test('switching puzzles during the result tween cancels the uncommitted operation', async ({
