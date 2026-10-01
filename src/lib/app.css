@@ -295,6 +295,9 @@ progress {
 	color: #fff;
 	border-color: var(--pico-primary-background);
 }
+.number-button.travelling {
+	z-index: 3;
+}
 .number-button:disabled {
 	opacity: 1;
 }
