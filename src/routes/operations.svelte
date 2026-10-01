@@ -1,88 +1,38 @@
 <script>
 	import { currentPuzzleIndex, puzzleData } from '$lib/stores';
-
-	let currentPuzzle = $puzzleData[$currentPuzzleIndex];
-
-	/**
-	 *
-	 * @param {{firstNum: number; operation: string; secondNum: number; result: number;
-	 *  firstIndex: number; secondIndex: number; numsState: number[]; }} step
-	 */
-	const formatEquation = (step) => {
-		if (step?.result >= 0) {
-			return [
-				step.firstNum,
-				// @ts-ignore //TODO just use symbol everywhere?
-				{
-					plus: '+',
-					minus: '-',
-					times: '×',
-					divide: '÷'
-				}[step.operation],
-				step.secondNum,
-				'=',
-				step.result
-			].join(' ');
-		}
-		return '';
-	};
-
-	$: {
-		currentPuzzle = $puzzleData[$currentPuzzleIndex];
-	}
+	const puzzle = $derived($puzzleData[$currentPuzzleIndex]);
+	const steps = $derived(puzzle.history.filter((step) => step.result >= 0));
+	const rowCount = $derived(Math.max(steps.length, puzzle.revealed ? puzzle.solution.length : 0));
+	/** @type {Record<string, string>} */
+	const symbols = { plus: '+', minus: '−', times: '×', divide: '÷' };
 </script>
 
-<div>
-	<table role="grid">
-		<thead>
-			<tr>
-				<th scope="col">Step</th>
-				<th scope="col">Your Operations</th>
-				<th scope="col" hidden={currentPuzzle.revealed}>
-					<button
-						on:click={() => (currentPuzzle.revealed = true)}
-						class="outline"
-						data-tooltip="You won't earn any more stars for this puzzle"
-					>
-						Show Solution
-					</button>
-				</th>
-				<th scope="col" hidden={!currentPuzzle.revealed}>Our Solution</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each { length: 5 } as _, i}
-				<tr
-					hidden={(!currentPuzzle.solution.at(i) || !currentPuzzle.revealed) &&
-						!(currentPuzzle.history.at(i)?.firstNum >= 0)}
+<section class="operations-section" aria-label="Operations">
+	<div class="operations-heading">
+		<strong>Your Operations</strong>
+		{#if !puzzle.revealed}<button
+				class="outline solution-button"
+				onclick={() => puzzleData.reveal($currentPuzzleIndex)}
+				title="You won't earn any more stars for this puzzle">Show Solution</button
+			>{:else}<span class="solution-label">Our Solution</span>{/if}
+	</div>
+	<div class="operations-rows" class:revealed={puzzle.revealed}>
+		{#each Array.from({ length: rowCount }, (_, index) => index) as index (index)}
+			<div class="equation-row">
+				<span class="step-number">{index + 1}</span>
+				<span class="equation"
+					>{#if steps[index]}{steps[index].firstNum}
+						{symbols[steps[index].operation]}
+						{steps[index].secondNum} = {steps[index].result}{/if}</span
 				>
-					<th scope="row">{i + 1}</th>
-					<td>{formatEquation(currentPuzzle.history.at(i)) || ''}</td>
-					<td hidden={!currentPuzzle.revealed}>{currentPuzzle.solution.at(i) || ''}</td>
-				</tr>
-			{/each}
-		</tbody>
-		<tfoot>
-			<tr>
-				<th
-					scope="col"
-					data-tooltip="Difference from the target to your closest number"
-					data-placement="bottom">Δ</th
-				>
-				<td>{$puzzleData[$currentPuzzleIndex].distance}</td>
-				<td hidden={!currentPuzzle.revealed}>0</td>
-			</tr>
-		</tfoot>
-	</table>
-</div>
-
-<style>
-	th button {
-		margin: 0;
-		padding: 0;
-	}
-
-	th[data-tooltip] {
-		border-bottom: none;
-	}
-</style>
+				{#if puzzle.revealed}<span class="equation solution">{puzzle.solution[index] || ''}</span
+					>{/if}
+			</div>
+		{/each}
+	</div>
+	<div class="distance-row">
+		<span title="Distance from the target to your closest number">Δ</span><span
+			>{puzzle.distance}</span
+		>{#if puzzle.revealed}<span>0</span>{/if}
+	</div>
+</section>
