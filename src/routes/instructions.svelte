@@ -41,16 +41,16 @@
 >
 	<article>
 		<header>
-			<strong id="instructions-title">How to Play</strong><button
+			<strong id="instructions-title">How to play</strong><button
 				class="icon-button"
 				aria-label="Close instructions"
 				onclick={() => modal.set(false)}><X size={22} /></button
 			>
 		</header>
 		<div class="guide-intro">
-			<span class="guide-eyebrow">A little arithmetic. A satisfying finish.</span>
-			<h2>Six numbers. One target.</h2>
-			<p>Combine the numbers to get as close as you can. Five fresh puzzles await you every day.</p>
+			<span class="guide-eyebrow">Five puzzles each day</span>
+			<h2>Reach the target</h2>
+			<p>Combine any of the six numbers to get as close to the target as you can.</p>
 		</div>
 		<section class="guide-example" aria-label="Example: 10 plus 5 makes the target of 15">
 			<div class="guide-target"><Target size={18} /><span>Target <strong>15</strong></span></div>
@@ -71,10 +71,10 @@
 					<span class="guide-control contrast"><X size={18} /></span>
 					<span class="guide-control contrast"><Divide size={18} /></span>
 				</div>
-				<h3>Build on your result</h3>
+				<h3>Use the result</h3>
 				<p>
-					Your two numbers become one. Use that new number in your next move. You don’t need all
-					six; keep results whole and zero or above.
+					Each move replaces your two numbers with the result. You can use it again. You don't have
+					to use all six numbers. Results must be whole numbers and cannot be negative.
 				</p>
 			</section>
 			<section>
@@ -88,15 +88,15 @@
 						></span
 					>
 				</div>
-				<h3>Try another route</h3>
+				<h3>Undo or start over</h3>
 				<p>
-					<strong>Undo</strong> takes back one move. <strong>Reset</strong> gives you your six starting
-					numbers again. Experiment freely.
+					<strong>Undo</strong> takes back your last move. <strong>Reset</strong> restores the six starting
+					numbers.
 				</p>
 			</section>
 		</div>
 		<section class="guide-scoring" aria-labelledby="scoring-title">
-			<h3 id="scoring-title">Every step closer counts</h3>
+			<h3 id="scoring-title">Earn stars</h3>
 			<div class="guide-score-grid">
 				{#each [1, 2, 3] as count (count)}
 					<div>
@@ -114,12 +114,12 @@
 		<div class="guide-solution">
 			<span class="guide-solution-button" aria-hidden="true">Show Solution</span>
 			<p>
-				Stuck? See one way to reach the target. Revealing it stops you earning more stars on that
-				puzzle.
+				Show Solution reveals one way to reach the target. You can keep playing, but you won't earn
+				more stars for that puzzle.
 			</p>
 		</div>
 		<footer>
-			<button onclick={() => modal.set(false)}>Let’s play <ArrowRight size={18} /></button>
+			<button onclick={() => modal.set(false)}>Play <ArrowRight size={18} /></button>
 		</footer>
 	</article>
 </dialog>
