@@ -1,21 +1,24 @@
 /// <reference types="@sveltejs/kit" />
 
 // @ts-nocheck
-import { build, files, version } from '$service-worker';
+import { base, build, files, prerendered, version } from '$service-worker';
 
 // Create a unique cache name for this deployment
 const CACHE = `cache-${version}`;
 
 const ASSETS = [
 	...build, // the app itself
-	...files // everything in `static`
+	...files, // everything in `static`
+	...prerendered // prerendered pages
 ];
+const PRECACHED = new Set(ASSETS);
 
 self.addEventListener('install', (event) => {
-	// Create a new cache and add all files to it
+	// Fetch past the HTTP cache so a new version never precaches stale files.
+	// The new worker waits until the page asks it to take over (see `message` below).
 	async function addFilesToCache() {
 		const cache = await caches.open(CACHE);
-		await cache.addAll(ASSETS);
+		await cache.addAll(ASSETS.map((url) => new Request(url, { cache: 'reload' })));
 	}
 
 	event.waitUntil(addFilesToCache());
@@ -27,9 +30,14 @@ self.addEventListener('activate', (event) => {
 		for (const key of await caches.keys()) {
 			if (key !== CACHE) await caches.delete(key);
 		}
+		await self.clients.claim();
 	}
 
 	event.waitUntil(deleteOldCaches());
+});
+
+self.addEventListener('message', (event) => {
+	if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', (event) => {
@@ -40,23 +48,24 @@ self.addEventListener('fetch', (event) => {
 		const url = new URL(event.request.url);
 		const cache = await caches.open(CACHE);
 
-		// `build`/`files` can always be served from the cache
-		if (ASSETS.includes(url.pathname)) {
-			return cache.match(url.pathname);
+		// `build`/`files`/`prerendered` are served from the cache, never the network
+		if (url.origin === self.location.origin && PRECACHED.has(url.pathname)) {
+			const cached = await cache.match(url.pathname);
+			if (cached) return cached;
+		}
+
+		// Page loads (including start_url and ?query variants) get the app shell
+		if (event.request.mode === 'navigate' && url.origin === self.location.origin) {
+			const shell = await cache.match(`${base}/`);
+			if (shell) return shell;
 		}
 
 		// for everything else, try the network first, but
 		// fall back to the cache if we're offline
 		try {
-			const response = await fetch(event.request);
-
-			if (response.status === 200) {
-				cache.put(event.request, response.clone());
-			}
-
-			return response;
+			return await fetch(event.request);
 		} catch {
-			return cache.match(event.request);
+			return (await cache.match(event.request)) ?? Response.error();
 		}
 	}
 

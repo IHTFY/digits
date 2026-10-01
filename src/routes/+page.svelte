@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import Board from './board.svelte';
 	import Instructions from './instructions.svelte';
+	import UpdatePrompt from './updatePrompt.svelte';
 
 	let menuOpen = $state(false);
 	onMount(() => {
@@ -72,3 +73,4 @@
 	<main><Board /></main>
 </div>
 <Instructions />
+<UpdatePrompt />

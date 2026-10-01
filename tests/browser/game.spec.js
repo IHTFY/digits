@@ -192,6 +192,37 @@ test('the production game reloads offline after the service worker is ready', as
 	await expect(page.locator('.number-button:not([hidden])')).toHaveCount(6);
 });
 
+test('the web manifest is installable with a maskable icon that exists', async ({
+	page,
+	request
+}) => {
+	await page.goto('/');
+	const href = await page.locator('link[rel="manifest"]').getAttribute('href');
+	const manifest = await (await request.get(new URL(href ?? '', page.url()).href)).json();
+	expect(manifest.display).toBe('standalone');
+	expect(manifest.icons.map((/** @type {{purpose: string}} */ icon) => icon.purpose)).toContain(
+		'maskable'
+	);
+	for (const icon of manifest.icons) {
+		const response = await request.get(new URL(icon.src, new URL(href ?? '', page.url())).href);
+		expect(response.ok()).toBe(true);
+	}
+});
+
+test('the service worker keeps updates waiting until the player accepts them', async ({
+	page,
+	browserName
+}) => {
+	test.skip(browserName === 'webkit', 'Service worker setup differs in WebKit offline testing');
+	await openGame(page);
+	const registration = await page.evaluate(async () => {
+		const reg = await navigator.serviceWorker.ready;
+		return { scope: reg.scope, active: !!reg.active };
+	});
+	expect(registration.active).toBe(true);
+	await expect(page.locator('.update-prompt')).toHaveCount(0);
+});
+
 for (const [width, height] of [
 	[320, 568],
 	[375, 667],
