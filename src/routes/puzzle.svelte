@@ -54,15 +54,9 @@
 		if (result === null || !Number.isSafeInteger(result)) {
 			announcement = 'Use an operation that gives a whole, nonnegative number.';
 			if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-				numberButtons[index].animate(
-					[
-						{ transform: 'translateX(0)' },
-						{ transform: 'translateX(-4px)' },
-						{ transform: 'translateX(4px)' },
-						{ transform: 'translateX(0)' }
-					],
-					{ duration: 180 }
-				);
+				numberButtons[index].animate([{ opacity: 1 }, { opacity: 0.6 }, { opacity: 1 }], {
+					duration: 180
+				});
 			}
 			return;
 		}
@@ -99,10 +93,10 @@
 		await tick();
 		announcement = `${result}${result === puzzle.target ? '. Target reached!' : ''}`;
 		if (!reducedMotion)
-			destination.animate(
-				[{ transform: 'scale(.88)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }],
-				{ duration: 240, easing: 'cubic-bezier(.2, .8, .2, 1)' }
-			);
+			destination.animate([{ opacity: 0.65 }, { opacity: 1 }], {
+				duration: 180,
+				easing: 'ease-out'
+			});
 	}
 
 	/** @param {string} value */
