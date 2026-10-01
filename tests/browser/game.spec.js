@@ -466,7 +466,7 @@ for (const reducedMotion of /** @type {const} */ (['no-preference', 'reduce'])) 
 		await page.getByRole('button', { name: 'How to Play' }).click();
 		await expect(page.getByRole('dialog')).toBeVisible();
 		await expect(panel).toBeHidden();
-		await page.getByRole('button', { name: 'Play' }).click();
+		await page.getByRole('button', { name: 'Play', exact: true }).click();
 		await expect(page.getByRole('dialog')).toBeHidden();
 		await expect(menu).toBeFocused();
 		await expect(menu).toHaveAttribute('aria-expanded', 'false');
@@ -486,7 +486,7 @@ for (const [width, height] of [
 		const dialog = page.getByRole('dialog');
 		await expect(dialog).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Reach the target' })).toBeVisible();
-		await page.getByRole('button', { name: 'Play' }).scrollIntoViewIfNeeded();
+		await page.getByRole('button', { name: 'Play', exact: true }).scrollIntoViewIfNeeded();
 		expect(
 			await dialog.evaluate((element) => ({
 				overflow: element.scrollWidth > element.clientWidth,
