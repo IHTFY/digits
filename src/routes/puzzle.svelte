@@ -2,6 +2,7 @@
 	import { operate } from '$lib/logic';
 	import { currentPuzzleIndex, puzzleData } from '$lib/stores';
 	import { playSound } from '$lib/sound';
+	import RollingNumber from '$lib/RollingNumber.svelte';
 	import { tick } from 'svelte';
 	import { Divide, Minus, Plus, Rewind, SkipBack, X } from '@lucide/svelte';
 
@@ -11,6 +12,11 @@
 	let announcement = $state('');
 	/** @type {HTMLButtonElement[]} */
 	let numberButtons = [];
+	/** @type {RollingNumber[]} */
+	let numberDisplays = [];
+	let rollingIndex = $state(-1);
+	let rollingResult = $state(0);
+	let travellingIndex = $state(-1);
 	/** @type {Animation | undefined} */
 	let mergeAnimation;
 	const puzzle = $derived($puzzleData[$currentPuzzleIndex]);
@@ -32,8 +38,11 @@
 		operation = '';
 		announcement = '';
 		merging = false;
+		rollingIndex = -1;
+		travellingIndex = -1;
 		return () => {
 			mergeAnimation?.cancel();
+			for (const display of numberDisplays) display?.cancel();
 		};
 	});
 
@@ -63,10 +72,11 @@
 		const puzzleIndex = $currentPuzzleIndex;
 		const fromIndex = firstIndex;
 		const selectedOperation = operation;
-		const source = numberButtons[fromIndex];
-		const destination = numberButtons[index];
+		const source = numberButtons[index];
+		const destination = numberButtons[fromIndex];
 		const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 		merging = true;
+		travellingIndex = index;
 		if (!reducedMotion) {
 			const from = source.getBoundingClientRect();
 			const to = destination.getBoundingClientRect();
@@ -84,19 +94,21 @@
 			}
 		}
 		if ($currentPuzzleIndex !== puzzleIndex) return;
+		rollingIndex = fromIndex;
+		rollingResult = result;
+		if (!(await numberDisplays[fromIndex].rollTo(result))) return;
+		if ($currentPuzzleIndex !== puzzleIndex) return;
 		puzzleData.combine(puzzleIndex, fromIndex, selectedOperation, index);
 		mergeAnimation?.cancel();
 		mergeAnimation = undefined;
 		firstIndex = -1;
 		operation = '';
 		merging = false;
+		rollingIndex = -1;
+		travellingIndex = -1;
 		await tick();
+		if ($currentPuzzleIndex !== puzzleIndex) return;
 		announcement = `${result}${result === puzzle.target ? '. Target reached!' : ''}`;
-		if (!reducedMotion)
-			destination.animate([{ opacity: 0.65 }, { opacity: 1 }], {
-				duration: 180,
-				easing: 'ease-out'
-			});
 	}
 
 	/** @param {string} value */
@@ -116,20 +128,29 @@
 </script>
 
 <section class="puzzle" aria-label={`Target ${puzzle.target}`} aria-busy={merging}>
-	<h1 class="target-number" aria-label={`Target number ${puzzle.target}`}>{puzzle.target}</h1>
+	<h1 class="target-number" aria-label={`Target number ${puzzle.target}`}>
+		<RollingNumber value={puzzle.target} animate />
+	</h1>
 	<div class="number-grid">
 		{#each numbers as number, index (index)}
+			{@const length = Math.max(
+				String(number).length,
+				rollingIndex === index ? String(rollingResult).length : 0
+			)}
 			<div class="number-slot">
 				<button
 					bind:this={numberButtons[index]}
 					class="number-button"
 					class:selected={firstIndex === index}
-					class:long-number={String(number).length > 3}
-					class:very-long-number={String(number).length > 5}
+					class:travelling={travellingIndex === index}
+					class:long-number={length > 3}
+					class:very-long-number={length > 5}
 					hidden={number < 0}
+					aria-label={String(number)}
 					aria-pressed={firstIndex === index}
 					disabled={merging}
-					onclick={() => selectNumber(index)}>{number}</button
+					onclick={() => selectNumber(index)}
+					><RollingNumber bind:this={numberDisplays[index]} value={number} /></button
 				>
 			</div>
 		{/each}

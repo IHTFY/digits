@@ -53,10 +53,10 @@ for (const revealed of [false, true]) {
 		}) => {
 			const game = fixture();
 			combine(game, 0, 'plus', 1);
-			combine(game, 1, 'times', 2);
-			combine(game, 2, 'times', 3);
-			combine(game, 3, 'times', 4);
-			combine(game, 4, 'times', 5);
+			combine(game, 0, 'times', 2);
+			combine(game, 0, 'times', 3);
+			combine(game, 0, 'times', 4);
+			combine(game, 0, 'times', 5);
 			game.revealed = revealed;
 			await page.setViewportSize({ width, height });
 			await openGame(page, game);
@@ -110,12 +110,100 @@ test('merge animation commits once, then undo and reset restore numbers', async 
 	await page.getByRole('button', { name: '2', exact: true }).click();
 	await expect(page.getByRole('button', { name: '3', exact: true })).toBeVisible();
 	await expect(page.locator('.equation-row')).toHaveCount(1);
-	await expect(page.getByRole('button', { name: '1', exact: true })).toBeHidden();
+	await expect(page.getByRole('button', { name: '2', exact: true })).toBeHidden();
+	await expect(page.locator('.number-button').first()).toHaveAttribute('aria-label', '3');
+	await expect(page.locator('.number-button').first()).toHaveText('3');
 	await page.getByRole('button', { name: 'Undo', exact: true }).click();
 	await expect(page.getByRole('button', { name: '1', exact: true })).toBeVisible();
 	await expect(page.locator('.equation-row')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Reset puzzle', exact: true }).click();
 	await expect(page.locator('.number-button:not([hidden])')).toHaveCount(6);
+});
+
+test('B travels to A before A rolls to the subtraction result', async ({ page }) => {
+	await openGame(page);
+	await page.getByRole('button', { name: '10', exact: true }).click();
+	await page.getByRole('button', { name: 'Subtract', exact: true }).click();
+	await page.clock.install({ time: new Date('2026-10-01T12:00:00Z') });
+	await page.clock.pauseAt(new Date('2026-10-01T12:00:01Z'));
+	const travel = await page.evaluate(() => {
+		const buttons = /** @type {NodeListOf<HTMLButtonElement>} */ (
+			document.querySelectorAll('.number-button')
+		);
+		const a = buttons[4].getBoundingClientRect();
+		const b = buttons[1].getBoundingClientRect();
+		buttons[1].click();
+		const animation = buttons[1].getAnimations()[0];
+		animation.pause();
+		return {
+			transform:
+				animation.effect instanceof KeyframeEffect
+					? animation.effect.getKeyframes().at(-1)?.transform
+					: null,
+			expectedX: a.x - b.x,
+			expectedY: a.y - b.y,
+			aAnimations: buttons[4]
+				.getAnimations()
+				.filter(
+					(animation) =>
+						animation.effect instanceof KeyframeEffect &&
+						animation.effect.getKeyframes().some((frame) => frame.transform)
+				).length
+		};
+	});
+	const translation = String(travel.transform).match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/);
+	expect(translation).not.toBeNull();
+	expect(Number(translation?.[1])).toBeCloseTo(travel.expectedX, 2);
+	expect(Number(translation?.[2])).toBeCloseTo(travel.expectedY, 2);
+	expect(travel.aAnimations).toBe(0);
+	await expect(page.locator('.equation-row')).toHaveCount(0);
+	await page.evaluate(() =>
+		document.querySelectorAll('.number-button')[1].getAnimations()[0].finish()
+	);
+	await page.clock.runFor(80);
+	await expect(page.locator('.number-button').nth(4)).toHaveText('9');
+	await expect(page.locator('.puzzle')).toHaveAttribute('aria-busy', 'true');
+	await expect(page.locator('.equation-row')).toHaveCount(0);
+	await page.clock.runFor(300);
+	await expect(page.locator('.number-button').nth(4)).toHaveAttribute('aria-label', '8');
+	await expect(page.locator('.number-button').nth(4)).toHaveText('8');
+	await expect(page.locator('.number-button').nth(1)).toBeHidden();
+	await expect(page.getByRole('status')).toHaveText('8');
+});
+
+test('switching puzzles during the result tween cancels the uncommitted operation', async ({
+	page
+}) => {
+	await openGame(page);
+	await page.getByRole('button', { name: '25', exact: true }).click();
+	await page.getByRole('button', { name: 'Multiply', exact: true }).click();
+	await page.clock.install({ time: new Date('2026-10-01T12:00:00Z') });
+	await page.clock.pauseAt(new Date('2026-10-01T12:00:01Z'));
+	await page.evaluate(() => {
+		const button = document.querySelectorAll('.number-button')[4];
+		if (button instanceof HTMLButtonElement) {
+			button.click();
+			button.getAnimations()[0].finish();
+		}
+	});
+	await page.clock.runFor(80);
+	const current = Number(await page.locator('.number-button').nth(5).innerText());
+	expect(current).toBeGreaterThan(25);
+	expect(current).toBeLessThan(250);
+	await expect(page.locator('.puzzle')).toHaveAttribute('aria-busy', 'true');
+	await page.evaluate(() => {
+		const tab = document.querySelectorAll('.puzzle-tab')[1];
+		if (tab instanceof HTMLButtonElement) tab.click();
+	});
+	await page.clock.runFor(16);
+	await page.evaluate(() => {
+		const tab = document.querySelector('.puzzle-tab');
+		if (tab instanceof HTMLButtonElement) tab.click();
+	});
+	await page.clock.runFor(400);
+	await expect(page.locator('.number-button').nth(5)).toHaveText('25');
+	await expect(page.locator('.equation-row')).toHaveCount(0);
+	await expect(page.locator('.puzzle')).toHaveAttribute('aria-busy', 'false');
 });
 
 test('switching puzzles during a merge cancels it without corrupting history', async ({ page }) => {
@@ -141,7 +229,52 @@ test('reduced motion skips circle travel', async ({ page }) => {
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
 	await page.getByRole('button', { name: '2', exact: true }).click();
 	await expect(page.getByRole('button', { name: '3', exact: true })).toBeVisible();
+	await expect(page.locator('.number-button').first()).toHaveAttribute('aria-label', '3');
+	await expect(page.locator('.number-button').nth(1)).toBeHidden();
 	expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+});
+
+test('the target counts through intermediate values across all five puzzles', async ({ page }) => {
+	await openGame(page);
+	await page.evaluate(() => {
+		const date = new Date();
+		const key = String(date.getFullYear() * 10000 + date.getMonth() * 100 + date.getDate());
+		const games = JSON.parse(localStorage.getItem(key) || '[]');
+		[72, 128, 205, 304, 450].forEach((target, index) => (games[index].target = target));
+		localStorage.setItem(key, JSON.stringify(games));
+	});
+	await page.reload();
+	await expect(page.locator('.target-number')).toHaveText('72');
+	await page.clock.install({ time: new Date('2026-10-01T12:00:00Z') });
+	await page.clock.pauseAt(new Date('2026-10-01T12:00:01Z'));
+	const selectTab = async (/** @type {number} */ index) => {
+		await page.evaluate((index) => {
+			const tab = document.querySelectorAll('.puzzle-tab')[index];
+			if (tab instanceof HTMLButtonElement) tab.click();
+		}, index);
+	};
+	await selectTab(1);
+	await page.clock.runFor(80);
+	const intermediate = Number(await page.locator('.target-number').innerText());
+	expect(intermediate).toBeGreaterThan(72);
+	expect(intermediate).toBeLessThan(128);
+	// Interrupt this tween with another tab and count from the current value.
+	await selectTab(2);
+	await page.clock.runFor(300);
+	await expect(page.locator('.target-number')).toHaveText('205');
+	for (const [index, target] of [
+		[3, 304],
+		[4, 450],
+		[0, 72],
+		[1, 128]
+	]) {
+		await selectTab(index);
+		await page.clock.runFor(300);
+		await expect(page.locator('.target-number')).toHaveText(String(target));
+	}
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await selectTab(0);
+	await expect(page.locator('.target-number')).toHaveText('72');
 });
 
 test('theme and revealed solution persist, and instructions support Escape', async ({ page }) => {
@@ -239,7 +372,7 @@ for (const [width, height] of [
 		await page.getByRole('button', { name: 'Add', exact: true }).click();
 		const samples = await page.evaluate(async () => {
 			const selectors =
-				'.target-number, .number-slot, .number-slot:nth-child(n+2) .number-button, .operator-button, .progress-section, .operations-section';
+				'.target-number, .number-slot, .number-slot:not(:nth-child(2)) .number-button, .operator-button, .progress-section, .operations-section';
 			const measure = () =>
 				[...document.querySelectorAll(selectors)].map((element) => {
 					const { x, y, width, height } = element.getBoundingClientRect();
