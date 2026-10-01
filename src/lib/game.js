@@ -35,8 +35,8 @@ export function combine(puzzle, firstIndex, operation, secondIndex) {
 	if (result === null || !Number.isSafeInteger(result)) return false;
 	Object.assign(step, { firstNum, firstIndex, operation, secondNum, secondIndex, result });
 	const numbers = [...step.numsState];
-	numbers[firstIndex] = -1;
-	numbers[secondIndex] = result;
+	numbers[firstIndex] = result;
+	numbers[secondIndex] = -1;
 	puzzle.history.push(createStep(numbers));
 	puzzle.distance = numbers.reduce(
 		(distance, number) =>

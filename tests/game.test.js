@@ -18,7 +18,7 @@ function puzzle(target = 30) {
 test('a merge consumes exactly two slots, keeps the result, and can be undone', () => {
 	const game = puzzle();
 	assert.equal(combine(game, 3, 'plus', 5), true);
-	assert.deepEqual(game.history.at(-1)?.numsState, [1, 2, 4, -1, 10, 30]);
+	assert.deepEqual(game.history.at(-1)?.numsState, [1, 2, 4, 30, 10, -1]);
 	assert.equal(game.history[0].result, 30);
 	assert.equal(game.stars, 3);
 	undo(game);
@@ -32,9 +32,25 @@ test('zero is a valid result and empty slots do not count toward distance', () =
 	game.numList = [2, 2, 4, 5, 10, 25];
 	game.history = [createStep(game.numList)];
 	assert.equal(combine(game, 0, 'minus', 1), true);
-	assert.equal(game.history.at(-1)?.numsState[1], 0);
+	assert.equal(game.history.at(-1)?.numsState[0], 0);
 	assert.equal(game.distance, 0);
 	assert.equal(game.stars, 3);
+});
+
+test('all operators retain A and consume B, preserving operand order', () => {
+	for (const [operation, result] of [
+		['plus', 15],
+		['minus', 5],
+		['times', 50],
+		['divide', 2]
+	]) {
+		const game = puzzle();
+		assert.equal(combine(game, 4, String(operation), 3), true);
+		assert.equal(game.history.at(-1)?.numsState[4], result);
+		assert.equal(game.history.at(-1)?.numsState[3], -1);
+		assert.equal(game.history[0].firstNum, 10);
+		assert.equal(game.history[0].secondNum, 5);
+	}
 });
 
 test('invalid operations and repeated slots leave history unchanged', () => {
@@ -56,7 +72,7 @@ test('consumed numbers cannot be reused, and division by zero is rejected', () =
 	const game = puzzle();
 	combine(game, 0, 'plus', 1);
 	const before = structuredClone(game);
-	assert.equal(combine(game, 0, 'plus', 5), false);
+	assert.equal(combine(game, 1, 'plus', 5), false);
 	assert.deepEqual(game, before);
 	assert.equal(operate('divide', 5, 0), null);
 });
@@ -74,7 +90,7 @@ test('large results remain exact and unsafe integers are rejected', () => {
 	const game = puzzle();
 	game.history = [createStep([999999, 999999, 1, 2, 3, 4])];
 	assert.equal(combine(game, 0, 'times', 1), true);
-	assert.equal(game.history.at(-1)?.numsState[1], 999998000001);
+	assert.equal(game.history.at(-1)?.numsState[0], 999998000001);
 	game.history = [createStep([Number.MAX_SAFE_INTEGER, 2, 1, 2, 3, 4])];
 	assert.equal(combine(game, 0, 'times', 1), false);
 });
