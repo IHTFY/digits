@@ -90,35 +90,82 @@ a:focus-visible {
 .dropdown {
 	margin: 0;
 }
-.app-header details.dropdown > summary.icon-button::after {
-	display: none;
+.menu-toggle {
+	position: relative;
 }
-.app-header details.dropdown > summary + ul {
+.menu-toggle svg {
+	position: absolute;
+	transition:
+		opacity 180ms,
+		transform 180ms;
+}
+.menu-close-icon {
+	opacity: 0;
+	transform: rotate(-90deg) scale(0.7);
+}
+.menu-toggle.expanded .menu-open-icon {
+	opacity: 0;
+	transform: rotate(90deg) scale(0.7);
+}
+.menu-toggle.expanded .menu-close-icon {
+	opacity: 1;
+	transform: rotate(0) scale(1);
+}
+.menu-panel {
+	position: fixed;
+	inset: auto;
 	width: min(210px, calc(100vw - 40px));
-	padding-block: 4px;
+	margin: 0;
+	padding: 6px;
+	list-style: none;
+	border: 1px solid var(--pico-muted-border-color);
+	border-radius: 12px;
+	background: var(--pico-dropdown-background-color);
+	color: var(--digits-color);
+	box-shadow: 0 12px 32px rgb(0 0 0 / 0.16);
+	transform-origin: top left;
+	opacity: 0;
+	transform: translateY(-6px) scale(0.96);
+	transition:
+		opacity 160ms,
+		transform 160ms,
+		display 160ms allow-discrete,
+		overlay 160ms allow-discrete;
 }
-.app-header details.dropdown > summary + ul li {
+.menu-panel:popover-open {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+}
+@starting-style {
+	.menu-panel:popover-open {
+		opacity: 0;
+		transform: translateY(-6px) scale(0.96);
+	}
+}
+.menu-panel li {
 	margin: 0;
 	padding: 0;
+	list-style: none;
 }
-.app-header details.dropdown > summary + ul li > :is(a, button) {
+.menu-panel li > :is(a, button) {
 	display: flex;
 	align-items: center;
 	gap: 10px;
 	width: 100%;
 	min-height: 44px;
 	margin: 0;
-	padding: 8px 16px;
+	padding: 8px 10px;
 	border: 0;
-	border-radius: 0;
+	border-radius: 6px;
 	box-shadow: none;
 	font-weight: 400;
 	line-height: 1.5;
 	text-align: left;
+	text-decoration: none;
 	background: transparent;
 	color: var(--digits-color);
 }
-.app-header details.dropdown > summary + ul li > :is(a, button):hover {
+.menu-panel li > :is(a, button):hover {
 	background: var(--pico-dropdown-hover-background-color);
 }
 .dropdown li svg {
@@ -400,7 +447,11 @@ progress {
 dialog#instructions {
 	position: fixed;
 	inset: 0;
-	width: min(480px, calc(100% - 32px));
+	width: min(600px, calc(100% - 32px));
+	min-width: 0;
+	min-height: 0;
+	border-radius: var(--pico-border-radius);
+	backdrop-filter: none;
 	height: fit-content;
 	max-height: calc(100dvh - 32px);
 	margin: auto;
@@ -409,48 +460,292 @@ dialog#instructions {
 	background: transparent;
 	overflow: auto;
 }
+dialog#instructions {
+	opacity: 0;
+	transform: translateY(12px) scale(0.98);
+	transition:
+		opacity 180ms,
+		transform 180ms,
+		display 180ms allow-discrete,
+		overlay 180ms allow-discrete;
+}
 dialog#instructions:not([open]) {
 	display: none;
 }
 dialog#instructions[open] {
 	display: block;
+	opacity: 1;
+	transform: translateY(0) scale(1);
 }
 dialog#instructions::backdrop {
 	background: rgba(17, 25, 31, 0.55);
 	backdrop-filter: blur(3px);
 }
 dialog#instructions article {
+	max-width: none;
+	max-height: none;
+	overflow: visible;
 	margin: 0;
 	padding: 24px;
 }
 dialog#instructions header {
+	position: sticky;
+	top: 0;
+	z-index: 1;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	margin: -24px -24px 20px;
 	padding: 12px 20px;
 }
-dialog#instructions p,
-dialog#instructions ul {
+dialog#instructions::backdrop {
+	opacity: 0;
+	transition:
+		opacity 180ms,
+		display 180ms allow-discrete,
+		overlay 180ms allow-discrete;
+}
+dialog#instructions[open]::backdrop {
+	opacity: 1;
+}
+@starting-style {
+	dialog#instructions[open] {
+		opacity: 0;
+		transform: translateY(12px) scale(0.98);
+	}
+	dialog#instructions[open]::backdrop {
+		opacity: 0;
+	}
+}
+dialog#instructions p {
 	font-size: 0.875rem;
+	line-height: 1.6;
+	margin: 0;
+	color: var(--pico-muted-color);
 }
-.instruction-stars {
-	padding: 0;
-	margin-bottom: 0;
+.guide-eyebrow {
+	color: var(--pico-primary);
+	font-size: 0.75rem;
+	font-weight: 650;
 }
-.instruction-stars li {
+.guide-intro h2 {
+	margin: 6px 0 8px;
+	font-size: clamp(1.5rem, 5vw, 2rem);
+	letter-spacing: -0.04em;
+}
+.guide-example {
+	margin: 20px 0;
+	padding: 18px 12px;
+	border-radius: 12px;
+	background: var(--pico-primary-focus);
+	text-align: center;
+}
+.guide-target {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	list-style: none;
+	justify-content: center;
+	gap: 6px;
+	font-size: 0.75rem;
 }
-.instruction-stars li > span {
+.guide-target strong {
+	font-size: 1.125rem;
+	margin-left: 4px;
+}
+.guide-equation {
 	display: flex;
-	justify-content: end;
-	gap: 2px;
-	width: 52px;
-	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	gap: clamp(6px, 2vw, 14px);
+	margin: 16px 0;
+}
+.guide-number {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: clamp(40px, 11vw, 60px);
+	aspect-ratio: 1;
+	border: 2px solid var(--pico-primary);
+	border-radius: 50%;
+	background: var(--digits-background);
+	font-size: 1.25rem;
+	font-weight: 750;
+}
+.guide-number.selected {
+	color: white;
+	background: var(--pico-primary-background);
+}
+.guide-number.result {
+	border-color: #5a9865;
+}
+.guide-number.result svg {
+	position: absolute;
+	right: -3px;
+	bottom: -3px;
+	border-radius: 50%;
+	background: #5a9865;
+	color: white;
+	padding: 2px;
+	box-sizing: content-box;
+}
+.guide-control {
+	display: inline-grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 6px;
+}
+.guide-control.contrast {
+	color: var(--pico-contrast-inverse);
+	background: var(--pico-contrast-background);
+}
+.guide-tool {
+	display: grid;
+	justify-items: center;
+	gap: 4px;
+	font-size: 0.6875rem;
+	color: var(--pico-muted-color);
+}
+.guide-control.secondary {
+	color: var(--pico-secondary-inverse);
+	background: var(--pico-secondary-background);
+}
+.guide-tips {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 24px;
+}
+.guide-tips section {
+	margin: 0;
+}
+.guide-operators {
+	display: flex;
+	gap: 5px;
+	margin-bottom: 10px;
+}
+.guide-tips h3,
+.guide-scoring h3 {
+	font-size: 0.9375rem;
+	margin: 0 0 6px;
+}
+.guide-scoring {
+	margin: 20px 0 0;
+	padding-top: 18px;
+	border-top: 1px solid var(--pico-muted-border-color);
+}
+.guide-score-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	margin-top: 12px;
+}
+.guide-score-grid > div {
+	display: grid;
+	justify-items: center;
+	gap: 6px;
+	padding: 10px 4px;
+	border-radius: 8px;
+	background: var(--pico-primary-focus);
+	font-size: 0.75rem;
+}
+.guide-stars {
+	display: flex;
+	gap: 3px;
 	color: var(--pico-primary);
+}
+.guide-solution {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin-top: 18px;
+}
+.guide-solution-button {
+	flex-shrink: 0;
+	padding: 7px 9px;
+	border: 1px solid var(--pico-primary);
+	color: var(--pico-primary);
+	border-radius: var(--pico-border-radius);
+	font-size: 0.75rem;
+}
+dialog#instructions footer {
+	margin: 20px -24px -24px;
+	padding: 16px 24px;
+}
+dialog#instructions footer button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	width: 100%;
+	margin: 0;
+}
+@media (max-width: 380px) {
+	dialog#instructions article {
+		padding: 20px;
+	}
+	dialog#instructions header {
+		margin: -20px -20px 16px;
+	}
+	dialog#instructions footer {
+		margin: 20px -20px -20px;
+	}
+	.guide-tips {
+		grid-template-columns: 1fr;
+		gap: 18px;
+	}
+	.guide-solution {
+		flex-direction: column;
+		align-items: start;
+		gap: 8px;
+	}
+}
+/* Feedback stays inside each element, preserving the game grid during play. */
+.icon-button {
+	transition:
+		background-color 150ms,
+		color 150ms;
+	border-radius: 50%;
+}
+.icon-button:hover {
+	background: var(--pico-primary-focus);
+}
+.operator-button {
+	transition:
+		background-color 150ms,
+		border-color 150ms,
+		color 150ms;
+}
+.tab-stars svg {
+	transition: opacity 180ms;
+}
+.tab-stars svg.earned {
+	animation: star-earned 240ms ease-out;
+}
+.equation-row,
+.solution-label,
+.equation.solution {
+	animation: content-arrive 180ms ease-out;
+}
+@keyframes content-arrive {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+@keyframes star-earned {
+	from {
+		transform: scale(0.6);
+	}
+	to {
+		transform: scale(1);
+	}
+}
+progress::-webkit-progress-value {
+	transition: width 220ms ease-out;
+}
+progress::-moz-progress-bar {
+	transition: width 220ms ease-out;
 }
 
 @media (max-width: 699px) and (min-height: 501px) {
