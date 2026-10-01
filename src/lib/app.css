@@ -93,25 +93,36 @@ a:focus-visible {
 .app-header details.dropdown > summary.icon-button::after {
 	display: none;
 }
-.dropdown > ul {
+.app-header details.dropdown > summary + ul {
 	width: min(210px, calc(100vw - 40px));
+	padding-block: 4px;
 }
-.dropdown li :is(a, button) {
+.app-header details.dropdown > summary + ul li {
+	margin: 0;
+	padding: 0;
+}
+.app-header details.dropdown > summary + ul li > :is(a, button) {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-}
-.dropdown li button {
 	width: 100%;
+	min-height: 44px;
 	margin: 0;
 	padding: 8px 16px;
 	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	font-weight: 400;
+	line-height: 1.5;
 	text-align: left;
 	background: transparent;
 	color: var(--digits-color);
 }
-.dropdown li button:hover {
+.app-header details.dropdown > summary + ul li > :is(a, button):hover {
 	background: var(--pico-dropdown-hover-background-color);
+}
+.dropdown li svg {
+	flex-shrink: 0;
 }
 main {
 	min-width: 0;
@@ -228,6 +239,11 @@ progress {
 	line-height: 1;
 	letter-spacing: -0.05em;
 }
+/* Keep aria-busy semantics without Pico inserting a spinner into the game grid. */
+.puzzle[aria-busy='true']::before {
+	content: none;
+	display: none;
+}
 .number-grid,
 .operator-grid {
 	display: grid;
@@ -301,6 +317,8 @@ progress {
 	color: #fff;
 }
 .operations-section {
+	--equation-row-height: 32px;
+	--equation-row-padding: 6px;
 	grid-area: operations;
 	display: flex;
 	flex-direction: column;
@@ -313,6 +331,7 @@ progress {
 .operations-heading {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	grid-template-rows: 44px;
 	align-items: center;
 	gap: 8px;
 	padding-bottom: 12px;
@@ -331,14 +350,16 @@ progress {
 	color: var(--pico-muted-color);
 }
 .operations-rows {
-	padding-block: 6px;
+	/* Five slots keep the board geometry stable as merges add history entries. */
+	min-height: calc(5 * var(--equation-row-height) + 2 * var(--equation-row-padding));
+	padding-block: var(--equation-row-padding);
 }
 .equation-row {
 	display: grid;
 	grid-template-columns: 20px minmax(0, 1fr);
 	align-items: center;
 	gap: 8px;
-	min-height: 32px;
+	min-height: var(--equation-row-height);
 	font-size: 0.875rem;
 }
 .operations-rows.revealed .equation-row {
@@ -463,12 +484,12 @@ dialog#instructions ul {
 	.operations-heading {
 		padding-bottom: 6px;
 	}
-	.equation-row {
-		min-height: 24px;
-		font-size: 0.75rem;
+	.operations-section {
+		--equation-row-height: 24px;
+		--equation-row-padding: 2px;
 	}
-	.operations-rows {
-		padding-block: 2px;
+	.equation-row {
+		font-size: 0.75rem;
 	}
 	.distance-row {
 		padding-top: 6px;
@@ -517,13 +538,13 @@ dialog#instructions ul {
 		padding: 4px;
 		font-size: 0.75rem;
 	}
+	.operations-section {
+		--equation-row-height: 23px;
+		--equation-row-padding: 2px;
+	}
 	.equation-row {
-		min-height: 23px;
 		gap: 4px;
 		font-size: 0.75rem;
-	}
-	.operations-rows {
-		padding-block: 2px;
 	}
 	.distance-row {
 		padding-top: 4px;
@@ -535,8 +556,10 @@ dialog#instructions ul {
 	.board {
 		row-gap: 4px;
 	}
+	.operations-section {
+		--equation-row-height: 20px;
+	}
 	.equation-row {
-		min-height: 20px;
 		font-size: 0.6875rem;
 	}
 	.operations-heading {
@@ -571,7 +594,7 @@ dialog#instructions ul {
 		width: min(100%, 320px);
 		gap: 4px;
 	}
-	.equation-row {
-		min-height: 22px;
+	.operations-section {
+		--equation-row-height: 22px;
 	}
 }
