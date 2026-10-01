@@ -191,3 +191,85 @@ test('the production game reloads offline after the service worker is ready', as
 	await expect(page.locator('.target-number')).toHaveText('72');
 	await expect(page.locator('.number-button:not([hidden])')).toHaveCount(6);
 });
+
+for (const [width, height] of [
+	[320, 568],
+	[375, 667],
+	[390, 844],
+	[568, 320],
+	[667, 375],
+	[768, 1024],
+	[1440, 900]
+]) {
+	test(`controls stay fixed throughout merges at ${width}×${height}`, async ({ page }) => {
+		await page.setViewportSize({ width, height });
+		await openGame(page);
+		await page.getByRole('button', { name: '1', exact: true }).click();
+		await page.getByRole('button', { name: 'Add', exact: true }).click();
+		const samples = await page.evaluate(async () => {
+			const selectors =
+				'.target-number, .number-slot, .number-slot:nth-child(n+2) .number-button, .operator-button, .progress-section, .operations-section';
+			const measure = () =>
+				[...document.querySelectorAll(selectors)].map((element) => {
+					const { x, y, width, height } = element.getBoundingClientRect();
+					return [x, y, width, height];
+				});
+			const before = measure();
+			const during = [];
+			const second = document.querySelectorAll('.number-button')[1];
+			if (second instanceof HTMLButtonElement) second.click();
+			const start = performance.now();
+			while (performance.now() - start < 650) {
+				await new Promise(requestAnimationFrame);
+				during.push(measure());
+			}
+			return { before, during };
+		});
+		for (const sample of samples.during) {
+			for (let element = 0; element < sample.length; element++) {
+				for (let axis = 0; axis < 4; axis++) {
+					expect(Math.abs(sample[element][axis] - samples.before[element][axis])).toBeLessThan(0.5);
+				}
+			}
+		}
+		await expect(page.getByRole('button', { name: '3', exact: true })).toBeVisible();
+		const after = await page.locator('.operator-grid').boundingBox();
+		await page.getByRole('button', { name: 'Undo', exact: true }).click();
+		expect(await page.locator('.operator-grid').boundingBox()).toEqual(after);
+		await page.getByRole('button', { name: 'Show Solution' }).click();
+		expect(await page.locator('.operator-grid').boundingBox()).toEqual(after);
+	});
+}
+
+for (const [width, height] of [
+	[375, 667],
+	[667, 375],
+	[1440, 900]
+]) {
+	test(`menu links and button align at ${width}×${height}`, async ({ page }) => {
+		await page.setViewportSize({ width, height });
+		await openGame(page);
+		await page.getByLabel('Menu', { exact: true }).click();
+		const rows = await page.locator('.dropdown li > :is(a, button)').evaluateAll((elements) =>
+			elements.map((element) => {
+				const bounds = element.getBoundingClientRect();
+				const icon = element.querySelector('svg')?.getBoundingClientRect();
+				const text = [...element.childNodes].find(
+					(node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim()
+				);
+				const range = document.createRange();
+				if (text) range.selectNode(text);
+				return {
+					x: bounds.x,
+					width: bounds.width,
+					height: bounds.height,
+					iconX: icon?.x,
+					iconOffsetY: icon ? icon.y - bounds.y : null,
+					textX: range.getBoundingClientRect().x
+				};
+			})
+		);
+		expect(rows).toHaveLength(3);
+		for (const row of rows) expect(row).toEqual(rows[0]);
+	});
+}
