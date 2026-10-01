@@ -1,88 +1,74 @@
 <script>
+	import '@picocss/pico/css/pico.css';
+	import '$lib/app.css';
 	import { modal, theme } from '$lib/stores';
-	import '@picocss/pico';
-	import {
-		GithubIcon,
-		HomeIcon,
-		InfoIcon,
-		MenuIcon,
-		MoonIcon,
-		SunIcon
-	} from 'svelte-feather-icons';
-
+	import { Code, House, Info, Menu, Moon, Sun } from '@lucide/svelte';
+	import { onMount } from 'svelte';
 	import Board from './board.svelte';
 	import Instructions from './instructions.svelte';
 
-	import { onMount } from 'svelte';
-
-	let openModal = () => {};
+	let menuOpen = $state(false);
 	onMount(() => {
-		const storedTheme = window.localStorage.getItem('theme');
-		theme.update((val) => storedTheme || val);
-		document.documentElement.setAttribute('data-theme', $theme);
-
-		openModal = () => {
-			document.documentElement.classList.add('modal-is-open', 'modal-is-opening');
-			setTimeout(() => {
-				document.documentElement.classList.remove('modal-is-opening');
-			}, 400);
-			modal.set(true);
-		};
+		try {
+			const storedTheme = localStorage.getItem('theme');
+			if (storedTheme === 'light' || storedTheme === 'dark') theme.set(storedTheme);
+		} catch {
+			/* Play without a stored preference. */
+		}
 	});
-
-	const toggleTheme = () => {
-		theme.update((val) => (val === 'dark' ? 'light' : 'dark'));
-		window.localStorage.setItem('theme', $theme);
+	$effect(() => {
 		document.documentElement.setAttribute('data-theme', $theme);
-	};
-
-	let showInstructions = false;
+	});
+	function toggleTheme() {
+		theme.update((value) => (value === 'dark' ? 'light' : 'dark'));
+		try {
+			localStorage.setItem('theme', $theme);
+		} catch {
+			/* Optional preference. */
+		}
+	}
 </script>
 
 <svelte:head>
 	<title>Digits</title>
+	<meta
+		name="description"
+		content="Combine six numbers to reach the target. Five new puzzles every day."
+	/>
 </svelte:head>
-<div class="container">
-	<nav>
-		<ul>
-			<li role="list">
-				<!-- svelte-ignore a11y-missing-attribute -->
-				<a aria-haspopup="listbox"> <MenuIcon /></a>
-				<ul role="listbox">
-					<li>
-						<!-- svelte-ignore a11y-missing-attribute -->
-						<a href="#instructions" on:click={openModal}><InfoIcon /> How to Play</a>
-					</li>
-					<li>
-						<a href="https://ihtfy.com" target="_blank"><HomeIcon /> IHTFY</a>
-					</li>
-					<li>
-						<a href="https://github.com/IHTFY/digits" target="_blank" class="secondary"
-							><GithubIcon /> Code</a
-						>
-					</li>
-				</ul>
-			</li>
-		</ul>
-		<ul>
-			<li><strong>Digits</strong></li>
-		</ul>
-		<ul>
-			<li>
-				<!-- svelte-ignore a11y-missing-attribute  a11y-click-events-have-key-events a11y-no-static-element-interactions -->
-				<a on:click={toggleTheme}>
-					{#if $theme === 'light'}
-						<MoonIcon />
-					{:else}
-						<SunIcon />
-					{/if}
-				</a>
-			</li>
-		</ul>
-	</nav>
-	<div>
-		<Board />
-	</div>
-</div>
 
+<div class="app-shell">
+	<header class="app-header">
+		<details class="dropdown" bind:open={menuOpen}>
+			<summary class="icon-button" aria-label="Menu"><Menu size={22} /></summary>
+			<ul>
+				<li>
+					<button
+						onclick={() => {
+							menuOpen = false;
+							modal.set(true);
+						}}><Info size={18} /> How to Play</button
+					>
+				</li>
+				<li>
+					<a href="https://ihtfy.com" target="_blank" rel="noreferrer"><House size={18} /> IHTFY</a>
+				</li>
+				<li>
+					<a href="https://github.com/IHTFY/digits" target="_blank" rel="noreferrer"
+						><Code size={18} /> Code</a
+					>
+				</li>
+			</ul>
+		</details>
+		<strong>Digits</strong>
+		<button
+			class="icon-button"
+			onclick={toggleTheme}
+			aria-label={$theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
+		>
+			{#if $theme === 'light'}<Moon size={22} />{:else}<Sun size={22} />{/if}
+		</button>
+	</header>
+	<main><Board /></main>
+</div>
 <Instructions />

@@ -1,22 +1,13 @@
 import { puzzles } from '$lib/getPuzzle';
 import { writable } from 'svelte/store';
+import { combine, createStep, undo } from './game.js';
 
 const theme = writable('light');
 
 const currentPuzzleIndex = writable(0);
 
-const blankState = {
-	firstNum: -1,
-	firstIndex: -1,
-	operation: '',
-	secondNum: -1,
-	secondIndex: -1,
-	result: -1,
-	numsState: [-1, -1, -1, -1, -1, -1]
-};
-
 /**
- * @type {any[]}
+ * @type {import('./game.js').Puzzle[]}
  */
 const puzzleArray = [];
 for (let i = 0; i < 5; i++) {
@@ -24,27 +15,49 @@ for (let i = 0; i < 5; i++) {
 		numList: puzzles[i][0],
 		target: puzzles[i][1],
 		stars: 0,
-		history: [structuredClone(blankState)],
+		history: [createStep(puzzles[i][0])],
 		solution: puzzles[i][2],
 		revealed: false,
-		distance: puzzles[i][1]
+		distance: Math.min(...puzzles[i][0].map((number) => Math.abs(number - puzzles[i][1])))
 	});
 }
 
-// export const puzzleData = writable(puzzleArray);
-
 function createPuzzles() {
 	const { subscribe, set, update } = writable(puzzleArray);
+
+	/** @param {number} index @param {(puzzle: import('./game.js').Puzzle) => void} change */
+	function changePuzzle(index, change) {
+		update((data) =>
+			data.map((puzzle, i) => {
+				if (i !== index) return puzzle;
+				const next = structuredClone(puzzle);
+				change(next);
+				return next;
+			})
+		);
+	}
 
 	return {
 		subscribe,
 		update,
 		set,
+		combine: (
+			/** @type {number} */ index,
+			/** @type {number} */ firstIndex,
+			/** @type {string} */ operation,
+			/** @type {number} */ secondIndex
+		) =>
+			changePuzzle(index, (puzzle) => {
+				combine(puzzle, firstIndex, operation, secondIndex);
+			}),
+		undo: (/** @type {number} */ index) => changePuzzle(index, undo),
+		reveal: (/** @type {number} */ index) =>
+			changePuzzle(index, (puzzle) => {
+				puzzle.revealed = true;
+			}),
 		reset: (/** @type {number} */ index) =>
-			update((puzzles) => {
-				puzzles[index].history = [structuredClone(blankState)];
-				puzzles[index].history[0].numsState = puzzles[index].numList;
-				return puzzles;
+			changePuzzle(index, (puzzle) => {
+				puzzle.history = [createStep(puzzle.numList)];
 			})
 	};
 }
