@@ -43,6 +43,17 @@
 			/* Start today's puzzles if saved data is unavailable or damaged. */
 		}
 		ready = true;
+
+		// Let an active game continue past midnight. Only advance the day on return.
+		function loadTodayOnReturn() {
+			if (document.visibilityState === 'visible' && getDateSeed() !== dateSeed) location.reload();
+		}
+		document.addEventListener('visibilitychange', loadTodayOnReturn);
+		window.addEventListener('pageshow', loadTodayOnReturn);
+		return () => {
+			document.removeEventListener('visibilitychange', loadTodayOnReturn);
+			window.removeEventListener('pageshow', loadTodayOnReturn);
+		};
 	});
 	$effect(() => {
 		const data = JSON.stringify($puzzleData);
