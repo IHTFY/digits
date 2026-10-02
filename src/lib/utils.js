@@ -1,11 +1,18 @@
 /**
  * Get the date as an integer for use as a seed
+ * @param {Date} [date] The local calendar date
  * @returns {number} The date as a number YYYYMMDD
  */
-const getDateSeed = () => {
-	const date = new Date();
-	return date.getFullYear() * 10000 + date.getMonth() * 100 + date.getDate();
+const getDateSeed = (date = new Date()) => {
+	return date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
 };
+
+/**
+ * Preserve the original zero-based-month seed so daily puzzles do not change.
+ * @param {Date} [date]
+ * @returns {number}
+ */
+const getLegacyDateSeed = (date = new Date()) => getDateSeed(date) - 100;
 
 /**
  * A seeded PRNG
@@ -21,10 +28,8 @@ const mulberry32 = (a) => {
 	};
 };
 
-/* Overwrite Math.random with a seeded PRNG */
-const dateRandom = mulberry32(getDateSeed());
-// const oldRandom = Math.random; // Save the original Math.random for unlimited puzzles
-// Math.random = dateRandom;
+/* Daily puzzle randomness uses the historical seed for compatibility. */
+const dateRandom = mulberry32(getLegacyDateSeed());
 
 /**
  * Get a random element from an array
@@ -57,4 +62,4 @@ const shuffle = (a, inplace = false, seeded = true) => {
  */
 const getNRandElements = (arr, n) => shuffle([...arr]).slice(0, n);
 
-export { getDateSeed, getNRandElements, pickRandom, shuffle };
+export { getDateSeed, getLegacyDateSeed, getNRandElements, pickRandom, shuffle };
