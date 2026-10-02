@@ -1,6 +1,7 @@
 <script>
 	import { currentPuzzleIndex, puzzleData } from '$lib/stores';
 	import { getDateSeed } from '$lib/utils';
+	import { isSavedGame } from '$lib/savedGame';
 	import { onMount } from 'svelte';
 	import Operations from './operations.svelte';
 	import Puzzle from './puzzle.svelte';
@@ -17,28 +18,7 @@
 	onMount(() => {
 		try {
 			const saved = JSON.parse(localStorage.getItem(String(dateSeed)) || 'null');
-			if (
-				Array.isArray(saved) &&
-				saved.length === 5 &&
-				saved.every(
-					(puzzle) =>
-						Array.isArray(puzzle.numList) &&
-						puzzle.numList.length === 6 &&
-						Array.isArray(puzzle.history) &&
-						puzzle.history.length > 0 &&
-						puzzle.history.every(
-							(/** @type {import('$lib/game').Step} */ step) =>
-								Array.isArray(step.numsState) && step.numsState.length === 6
-						) &&
-						Array.isArray(puzzle.solution) &&
-						Number.isFinite(puzzle.target) &&
-						Number.isInteger(puzzle.stars) &&
-						puzzle.stars >= 0 &&
-						puzzle.stars <= 3 &&
-						Number.isFinite(puzzle.distance)
-				)
-			)
-				puzzleData.set(saved);
+			if (isSavedGame(saved)) puzzleData.set(saved);
 		} catch {
 			/* Start today's puzzles if saved data is unavailable or damaged. */
 		}
