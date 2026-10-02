@@ -9,6 +9,9 @@
 		if (!('serviceWorker' in navigator) || import.meta.env.DEV) return;
 
 		let reloading = false;
+		let disposed = false;
+		const listeners = new AbortController();
+		const options = { signal: listeners.signal };
 		const hadController = !!navigator.serviceWorker.controller;
 		/** @type {ServiceWorkerRegistration | undefined} */
 		let registration;
@@ -16,28 +19,41 @@
 		/** @param {ServiceWorkerRegistration} reg */
 		function watch(reg) {
 			if (reg.waiting && navigator.serviceWorker.controller) waiting = reg.waiting;
-			reg.addEventListener('updatefound', () => {
+			function watchInstallingWorker() {
 				const worker = reg.installing;
-				worker?.addEventListener('statechange', () => {
-					if (worker.state === 'installed' && navigator.serviceWorker.controller) waiting = worker;
-				});
-			});
+				worker?.addEventListener(
+					'statechange',
+					() => {
+						if (worker.state === 'installed' && navigator.serviceWorker.controller)
+							waiting = worker;
+					},
+					options
+				);
+			}
+			reg.addEventListener('updatefound', watchInstallingWorker, options);
+			// Installation may already have started before register() resolves.
+			watchInstallingWorker();
 		}
 
 		const checkForUpdate = () => {
 			if (document.visibilityState === 'visible') registration?.update().catch(() => {});
 		};
 
-		navigator.serviceWorker.addEventListener('controllerchange', () => {
-			// The first install claims the page; only reload when replacing an older version.
-			if (!hadController || reloading) return;
-			reloading = true;
-			location.reload();
-		});
+		navigator.serviceWorker.addEventListener(
+			'controllerchange',
+			() => {
+				// The first install claims the page; only reload when replacing an older version.
+				if (!hadController || reloading) return;
+				reloading = true;
+				location.reload();
+			},
+			options
+		);
 
 		navigator.serviceWorker
 			.register(`${base}/service-worker.js`)
 			.then((reg) => {
+				if (disposed) return;
 				registration = reg;
 				watch(reg);
 				checkForUpdate();
@@ -46,10 +62,11 @@
 				/* The app still works online without a service worker. */
 			});
 
-		document.addEventListener('visibilitychange', checkForUpdate);
+		document.addEventListener('visibilitychange', checkForUpdate, options);
 		const interval = setInterval(checkForUpdate, 60 * 60 * 1000);
 		return () => {
-			document.removeEventListener('visibilitychange', checkForUpdate);
+			disposed = true;
+			listeners.abort();
 			clearInterval(interval);
 		};
 	});
