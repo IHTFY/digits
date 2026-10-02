@@ -10,11 +10,14 @@ Based on the NYT game by the same name (Discontinued on August 8th, 2023).
 
 Combine numbers to reach the target number.
 
-New puzzles require three or four operations at minimum. The generator searches
-all combinations of input slots up to four operations and chooses a target with
-no shorter solution. The displayed solution uses the fewest operations, so every
-intermediate result contributes to the target. Equal values in different slots
-remain separate numbers.
+New puzzles have solutions with three or four contributing operations. The
+generator tracks each input slot and emits only operations that feed the target.
+It replaces computed values with cheaper equal values when that substitution
+does not reuse an input slot. Duplicate values are allowed when both contribute.
+Players can still find shorter solutions.
+
+Generation retries use seeded randomness. If a search runs out of attempts, the
+app retries that puzzle with new numbers, then uses a validated fallback if needed.
 
 Generator changes can change daily targets. Saved games keep their existing
 puzzles and progress.

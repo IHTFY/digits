@@ -55,63 +55,72 @@ const operate = (operator, a, b) => {
 const OPERATORS = ['+', '-', '×', '÷'];
 
 /**
- * Find shortest solutions using disjoint subsets of the input slots.
- * Each expression uses every leaf and intermediate result exactly once.
- * @param {number[]} numList
- * @param {number} maxOps
- * @returns {Map<number, string[]>}
+ * @typedef {{value: number, mask: number, cost: number, left?: Expression,
+ * right?: Expression, operator?: string}} Expression
  */
-const findSolutions = (numList, maxOps) => {
-	/** @type {Map<number, string[]>[]} */
-	const subsets = Array.from({ length: 1 << numList.length }, () => new Map());
-	/** @type {Map<number, string[]>} */
-	const shortest = new Map();
-	for (let mask = 1; mask < subsets.length; mask++) {
-		const size = mask.toString(2).replaceAll('0', '').length;
-		if (size > maxOps + 1) continue;
-		const values = subsets[mask];
-		if (size === 1) {
-			values.set(numList[Math.log2(mask)], []);
-		} else {
-			for (let left = (mask - 1) & mask; left; left = (left - 1) & mask) {
-				const right = mask ^ left;
-				if (left > right) continue;
-				for (const [a, aSteps] of subsets[left]) {
-					for (const [b, bSteps] of subsets[right]) {
-						for (const operator of OPERATORS) {
-							const pairs =
-								operator === '-' || operator === '÷'
-									? [
-											[a, b],
-											[b, a]
-										]
-									: [[a, b]];
-							for (const [first, second] of pairs) {
-								const result = operate(operator, first, second);
-								if (result === null || !Number.isSafeInteger(result) || values.has(result))
-									continue;
-								values.set(result, [
-									...aSteps,
-									...bSteps,
-									`${first} ${operator} ${second} = ${result}`
-								]);
-							}
-						}
-					}
-				}
-			}
-		}
-		for (const [value, steps] of values) {
-			const previous = shortest.get(value);
-			if (!previous || steps.length < previous.length) shortest.set(value, steps);
-		}
-	}
-	return shortest;
+
+/** @param {number[]} numbers @returns {Expression[]} */
+const startingExpressions = (numbers) =>
+	numbers.map((value, index) => ({ value, mask: 1 << index, cost: 0 }));
+
+/** @param {Expression} left @param {string} operator @param {Expression} right @returns {Expression|null} */
+const combineExpressions = (left, operator, right) => {
+	if (left.mask & right.mask) return null;
+	const value = operate(operator, left.value, right.value);
+	if (value === null || !Number.isSafeInteger(value)) return null;
+	return {
+		value,
+		mask: left.mask | right.mask,
+		cost: left.cost + right.cost + 1,
+		left,
+		right,
+		operator
+	};
 };
 
 /**
- * Verify arithmetic, operand availability, the final target, and optimal length.
- * Unused steps and replaceable intermediates cannot occur in a shortest solution.
+ * Use cheaper equal values only when their input slots are free outside this branch.
+ * Search expressions already encountered, without enumerating shorter solutions.
+ * @param {Expression} root
+ * @param {Expression[]} known
+ * @returns {Expression}
+ */
+const simplifyExpression = (root, known) => {
+	/** @param {Expression} node @param {number} outside @returns {Expression} */
+	const simplify = (node, outside) => {
+		const cheaper = known.filter(
+			(other) => other.value === node.value && other.cost < node.cost && !(other.mask & outside)
+		);
+		if (cheaper.length) {
+			cheaper.sort((a, b) => a.cost - b.cost);
+			return simplify(cheaper[0], outside);
+		}
+		if (!node.left || !node.right || !node.operator) return node;
+		const left = simplify(node.left, outside | node.right.mask);
+		const right = simplify(node.right, outside | left.mask);
+		return combineExpressions(left, node.operator, right) ?? node;
+	};
+	let previous;
+	do {
+		previous = root.cost;
+		root = simplify(root, 0);
+	} while (root.cost < previous);
+	return root;
+};
+
+/** @param {Expression} node @returns {string[]} */
+const expressionSteps = (node) => {
+	if (!node.left || !node.right) return [];
+	return [
+		...expressionSteps(node.left),
+		...expressionSteps(node.right),
+		`${node.left.value} ${node.operator} ${node.right.value} = ${node.value}`
+	];
+};
+
+/**
+ * Replay exact slots, require every step to feed the final target, and reject
+ * cheaper equal-value substitutions. Duplicate values may have different identities.
  * @param {number[]} numList
  * @param {number} target
  * @param {string[]} steps
@@ -127,35 +136,54 @@ const verifySolution = (numList, target, steps) => {
 		steps.length > numList.length - 1
 	)
 		return false;
-	const available = [...numList];
-	let final = null;
-	for (const step of steps) {
-		const match = /^(\d+) ([+×÷-]) (\d+) = (\d+)$/.exec(step);
-		if (!match) return false;
-		const [, first, operator, second, output] = match;
-		const a = Number(first),
-			b = Number(second),
-			result = Number(output);
-		if (!Number.isSafeInteger(result) || operate(operator, a, b) !== result) return false;
-		for (const operand of [a, b]) {
-			const index = available.indexOf(operand);
-			if (index === -1) return false;
-			available.splice(index, 1);
+	const equations = steps.map((step) => /^(\d+) ([+×÷-]) (\d+) = (\d+)$/.exec(step));
+	if (equations.some((equation) => !equation)) return false;
+	const starting = startingExpressions(numList);
+	/** @param {number} index @param {Expression[]} pool @param {Expression[]} known @returns {boolean} */
+	const replay = (index, pool, known) => {
+		if (index === equations.length) {
+			if (!index) return numList.includes(target);
+			const final = known[known.length - 1];
+			return (
+				final.value === target &&
+				final.cost === steps.length &&
+				simplifyExpression(final, known).cost === final.cost
+			);
 		}
-		available.push(result);
-		final = result;
-	}
-	if (steps.length ? final !== target : !available.includes(target)) return false;
-	return findSolutions(numList, steps.length).get(target)?.length === steps.length;
+		const equation = equations[index];
+		if (!equation) return false;
+		const [, first, operator, second, output] = equation;
+		for (const [i, a] of pool.entries()) {
+			if (a.value !== Number(first)) continue;
+			for (const [j, b] of pool.entries()) {
+				if (i === j || b.value !== Number(second)) continue;
+				const result = combineExpressions(a, operator, b);
+				if (!result || result.value !== Number(output)) continue;
+				if (
+					replay(
+						index + 1,
+						[...pool.filter((_, slot) => slot !== i && slot !== j), result],
+						[...known, result]
+					)
+				)
+					return true;
+			}
+		}
+		return false;
+	};
+	return replay(0, starting, starting);
 };
 
+// The daily caller retries new number lists and then uses a validated fallback.
+class PuzzleGenerationError extends Error {}
+
 /**
- * Choose a target whose shortest solution meets the operation limits.
- * @param {number[]} numList The starting numbers
- * @param {number} minTarget The exclusive lower target bound
- * @param {number} maxTarget The exclusive upper target bound
- * @param {number} minOps The minimum required operations
- * @param {number} maxOps The maximum required operations
+ * Generate a target with three or four contributing operations by default.
+ * @param {number[]} numList
+ * @param {number} minTarget Exclusive lower bound
+ * @param {number} maxTarget Exclusive upper bound
+ * @param {number} minOps
+ * @param {number} maxOps
  * @returns {[number, string[]]}
  */
 const generatePuzzle = (numList, minTarget, maxTarget, minOps = 3, maxOps = 4) => {
@@ -173,11 +201,42 @@ const generatePuzzle = (numList, minTarget, maxTarget, minOps = 3, maxOps = 4) =
 		minTarget >= maxTarget
 	)
 		throw new RangeError('Invalid puzzle generation limits or starting numbers');
-	const candidates = [...findSolutions(numList, maxOps)].filter(
-		([target, steps]) => target > minTarget && target < maxTarget && steps.length >= minOps
-	);
-	if (!candidates.length) throw new RangeError('No puzzle meets the target and operation limits');
-	return pickRandom(candidates);
+	const starting = startingExpressions(numList);
+	for (let attempt = 0; attempt < 500; attempt++) {
+		let pool = [...starting];
+		const known = [...starting];
+		while (pool.length > 1) {
+			/** @type {{i: number, j: number, expression: Expression}[]} */
+			const options = [];
+			for (const [i, a] of pool.entries()) {
+				for (const [j, b] of pool.entries()) {
+					if (i === j || a.cost + b.cost + 1 > maxOps) continue;
+					for (const operator of OPERATORS) {
+						const expression = combineExpressions(a, operator, b);
+						if (expression && expression.value > 0) options.push({ i, j, expression });
+					}
+				}
+			}
+			if (!options.length) break;
+			const { i, j, expression } = pickRandom(options);
+			pool = [...pool.filter((_, index) => index !== i && index !== j), expression];
+			known.push(expression);
+			if (expression.value <= minTarget || expression.value >= maxTarget) continue;
+			const candidate = simplifyExpression(expression, known);
+			if (candidate.cost < minOps || candidate.cost > maxOps) continue;
+			const steps = expressionSteps(candidate);
+			if (verifySolution(numList, candidate.value, steps)) return [candidate.value, steps];
+		}
+	}
+	throw new PuzzleGenerationError('No puzzle found within the generation attempt limit');
 };
 
-export { NUMBERBANKS, OPERATORS, generateNumLists, generatePuzzle, operate, verifySolution };
+export {
+	NUMBERBANKS,
+	OPERATORS,
+	PuzzleGenerationError,
+	generateNumLists,
+	generatePuzzle,
+	operate,
+	verifySolution
+};
