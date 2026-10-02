@@ -40,12 +40,10 @@ test('legacy progress migrates to a namespaced calendar key and wins on later re
 	expect(saved.otherMonth).toBe('do not overwrite');
 });
 
-test('corrected calendar keys preserve the previously generated daily puzzles', async ({
-	page
-}) => {
+test('daily puzzles keep seeded number lists and use quality-checked targets', async ({ page }) => {
 	await page.clock.install({ time: new Date(2026, 9, 1, 12) });
 	await page.goto('/');
-	await expect(page.locator('.puzzle-tab')).toHaveText(['89', '182', '236', '310', '445']);
+	await expect(page.locator('.puzzle-tab')).toHaveText(['51', '101', '266', '307', '444']);
 	expect(
 		await page
 			.locator('.number-button')
