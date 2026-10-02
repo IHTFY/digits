@@ -9,6 +9,10 @@
 
 	let ready = $state(false);
 	const dateSeed = getDateSeed();
+	// Namespacing avoids collisions with old numeric keys from a different month.
+	const storageKey = `digits:${dateSeed}`;
+	// Previous versions encoded months from zero instead of one.
+	const legacyStorageKey = String(dateSeed - 100);
 	const totalStars = $derived($puzzleData.reduce((total, puzzle) => total + puzzle.stars, 0));
 	const level = $derived(
 		['Beginner', 'Moving Up', 'Solid', 'Nice', 'Great', 'Amazing', 'Genius'][
@@ -17,7 +21,9 @@
 	);
 	onMount(() => {
 		try {
-			const saved = JSON.parse(localStorage.getItem(String(dateSeed)) || 'null');
+			const saved = JSON.parse(
+				localStorage.getItem(storageKey) ?? localStorage.getItem(legacyStorageKey) ?? 'null'
+			);
 			if (isSavedGame(saved)) puzzleData.set(saved);
 		} catch {
 			/* Start today's puzzles if saved data is unavailable or damaged. */
@@ -39,7 +45,7 @@
 		const data = JSON.stringify($puzzleData);
 		if (ready) {
 			try {
-				localStorage.setItem(String(dateSeed), data);
+				localStorage.setItem(storageKey, data);
 			} catch {
 				/* Play without persistence. */
 			}
