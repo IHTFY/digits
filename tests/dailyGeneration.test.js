@@ -3,6 +3,7 @@ import test from 'node:test';
 import { FALLBACK_PUZZLES, generatePuzzles } from '../src/lib/getPuzzle.js';
 import {
 	generatePuzzle,
+	getEasyTargets,
 	NUMBERBANKS,
 	PuzzleGenerationError,
 	verifySolution
@@ -45,6 +46,7 @@ test('exhausted daily searches use independent, validated fallback puzzles', () 
 	for (const [index, [list, target, solution]] of daily.entries()) {
 		assert.equal(verifySolution(list, target, solution), true);
 		assert.equal(solution.length, 3);
+		assert.equal(getEasyTargets(list).has(target), false);
 		assert.ok(target > (index * 100 || 50) && target < (index + 1) * 100);
 		assert.ok(
 			list.every((value) => NUMBERBANKS[index].includes(value) || (index === 0 && value === 25))

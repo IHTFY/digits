@@ -10,11 +10,12 @@ Based on the NYT game by the same name (Discontinued on August 8th, 2023).
 
 Combine numbers to reach the target number.
 
-New puzzles have solutions with three or four contributing operations. The
+New puzzles have solutions with three to five contributing operations. Targets
+reachable in zero, one, or two moves are rejected. The
 generator tracks each input slot and emits only operations that feed the target.
 It replaces computed values with cheaper equal values when that substitution
 does not reuse an input slot. Duplicate values are allowed when both contribute.
-Players can still find shorter solutions.
+Players can still beat a four- or five-step solution with a three- or four-step route.
 
 Generation retries use seeded randomness. If a search runs out of attempts, the
 app retries that puzzle with new numbers, then uses a validated fallback if needed.
