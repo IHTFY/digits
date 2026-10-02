@@ -174,11 +174,48 @@ const verifySolution = (numList, target, steps) => {
 	return replay(0, starting, starting);
 };
 
+/**
+ * All targets reachable in at most two moves. Two moves that contribute to one
+ * result combine a one-move expression with a third, distinct starting slot.
+ * @param {number[]} numList
+ * @returns {Set<number>}
+ */
+const getEasyTargets = (numList) => {
+	const starting = startingExpressions(numList);
+	const targets = new Set(numList);
+	/** @type {Expression[]} */
+	const oneMove = [];
+	for (const a of starting) {
+		for (const b of starting) {
+			for (const operator of OPERATORS) {
+				const result = combineExpressions(a, operator, b);
+				if (!result) continue;
+				targets.add(result.value);
+				oneMove.push(result);
+			}
+		}
+	}
+	for (const first of oneMove) {
+		for (const second of starting) {
+			for (const [a, b] of [
+				[first, second],
+				[second, first]
+			]) {
+				for (const operator of OPERATORS) {
+					const result = combineExpressions(a, operator, b);
+					if (result) targets.add(result.value);
+				}
+			}
+		}
+	}
+	return targets;
+};
+
 // The daily caller retries new number lists and then uses a validated fallback.
 class PuzzleGenerationError extends Error {}
 
 /**
- * Generate a target with three or four contributing operations by default.
+ * Generate a target with three to five contributing operations and no two-move shortcut.
  * @param {number[]} numList
  * @param {number} minTarget Exclusive lower bound
  * @param {number} maxTarget Exclusive upper bound
@@ -186,7 +223,13 @@ class PuzzleGenerationError extends Error {}
  * @param {number} maxOps
  * @returns {[number, string[]]}
  */
-const generatePuzzle = (numList, minTarget, maxTarget, minOps = 3, maxOps = 4) => {
+const generatePuzzle = (
+	numList,
+	minTarget,
+	maxTarget,
+	minOps = 3,
+	maxOps = Math.min(5, numList.length - 1)
+) => {
 	if (
 		numList.length < 2 ||
 		numList.length > 6 ||
@@ -202,6 +245,7 @@ const generatePuzzle = (numList, minTarget, maxTarget, minOps = 3, maxOps = 4) =
 	)
 		throw new RangeError('Invalid puzzle generation limits or starting numbers');
 	const starting = startingExpressions(numList);
+	const easyTargets = getEasyTargets(numList);
 	for (let attempt = 0; attempt < 500; attempt++) {
 		let pool = [...starting];
 		const known = [...starting];
@@ -221,7 +265,12 @@ const generatePuzzle = (numList, minTarget, maxTarget, minOps = 3, maxOps = 4) =
 			const { i, j, expression } = pickRandom(options);
 			pool = [...pool.filter((_, index) => index !== i && index !== j), expression];
 			known.push(expression);
-			if (expression.value <= minTarget || expression.value >= maxTarget) continue;
+			if (
+				expression.value <= minTarget ||
+				expression.value >= maxTarget ||
+				easyTargets.has(expression.value)
+			)
+				continue;
 			const candidate = simplifyExpression(expression, known);
 			if (candidate.cost < minOps || candidate.cost > maxOps) continue;
 			const steps = expressionSteps(candidate);
@@ -237,6 +286,7 @@ export {
 	PuzzleGenerationError,
 	generateNumLists,
 	generatePuzzle,
+	getEasyTargets,
 	operate,
 	verifySolution
 };

@@ -43,12 +43,12 @@ test('legacy progress migrates to a namespaced calendar key and wins on later re
 test('daily puzzles keep seeded number lists and use quality-checked targets', async ({ page }) => {
 	await page.clock.install({ time: new Date(2026, 9, 1, 12) });
 	await page.goto('/');
-	await expect(page.locator('.puzzle-tab')).toHaveText(['66', '118', '296', '398', '453']);
+	await expect(page.locator('.puzzle-tab')).toHaveText(['51', '106', '294', '338', '404']);
 	expect(
 		await page
 			.locator('.number-button')
 			.evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label')))
 	).toEqual(['2', '3', '4', '7', '9', '25']);
 	await page.reload();
-	await expect(page.locator('.puzzle-tab')).toHaveText(['66', '118', '296', '398', '453']);
+	await expect(page.locator('.puzzle-tab')).toHaveText(['51', '106', '294', '338', '404']);
 });
