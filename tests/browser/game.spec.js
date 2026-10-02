@@ -238,7 +238,7 @@ test('the target counts through intermediate values across all five puzzles', as
 	await openGame(page);
 	await page.evaluate(() => {
 		const date = new Date();
-		const key = String(date.getFullYear() * 10000 + date.getMonth() * 100 + date.getDate());
+		const key = `digits:${date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate()}`;
 		const games = JSON.parse(localStorage.getItem(key) || '[]');
 		[72, 128, 205, 304, 450].forEach((target, index) => (games[index].target = target));
 		localStorage.setItem(key, JSON.stringify(games));
