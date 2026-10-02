@@ -55,60 +55,129 @@ const operate = (operator, a, b) => {
 const OPERATORS = ['+', '-', '×', '÷'];
 
 /**
- * Applies random operations to generate a target within the range
- * @param {(number|null)[]} numList The list building block numbers
- * @param {number} minTarget The minimum target value
- * @param {number} maxTarget The maximum target value
- * @param {number} minOps The minimum number of operations in our solution
- * @param {number} maxOps The maximum number of operations in our solution
- * @returns {[number, string[]]} [The target number,[the steps for a solution]]
+ * Find shortest solutions using disjoint subsets of the input slots.
+ * Each expression uses every leaf and intermediate result exactly once.
+ * @param {number[]} numList
+ * @param {number} maxOps
+ * @returns {Map<number, string[]>}
  */
-const generatePuzzle = (numList, minTarget, maxTarget, minOps = 3, maxOps = 4) => {
-	let nums = [...numList];
-	let ops = 0;
-	let steps = [];
-	let generated = new Set();
-
-	// perform up to 5 random operations (all numbers combined)
-	while (ops < maxOps) {
-		let result, a, b, operator;
-		// find any valid operation
-		while (!result) {
-			operator = pickRandom(OPERATORS);
-			[a, b] = getNRandElements(
-				nums.filter((a) => a), // creating a zero is valid but never makes progress
-				2
-			);
-			result = operate(operator, a, b);
+const findSolutions = (numList, maxOps) => {
+	/** @type {Map<number, string[]>[]} */
+	const subsets = Array.from({ length: 1 << numList.length }, () => new Map());
+	/** @type {Map<number, string[]>} */
+	const shortest = new Map();
+	for (let mask = 1; mask < subsets.length; mask++) {
+		const size = mask.toString(2).replaceAll('0', '').length;
+		if (size > maxOps + 1) continue;
+		const values = subsets[mask];
+		if (size === 1) {
+			values.set(numList[Math.log2(mask)], []);
+		} else {
+			for (let left = (mask - 1) & mask; left; left = (left - 1) & mask) {
+				const right = mask ^ left;
+				if (left > right) continue;
+				for (const [a, aSteps] of subsets[left]) {
+					for (const [b, bSteps] of subsets[right]) {
+						for (const operator of OPERATORS) {
+							const pairs =
+								operator === '-' || operator === '÷'
+									? [
+											[a, b],
+											[b, a]
+										]
+									: [[a, b]];
+							for (const [first, second] of pairs) {
+								const result = operate(operator, first, second);
+								if (result === null || !Number.isSafeInteger(result) || values.has(result))
+									continue;
+								values.set(result, [
+									...aSteps,
+									...bSteps,
+									`${first} ${operator} ${second} = ${result}`
+								]);
+							}
+						}
+					}
+				}
+			}
 		}
-
-		// update nums
-		nums.splice(nums.indexOf(a), 1, null);
-		nums.splice(nums.indexOf(b), 1, result);
-		++ops;
-
-		// update generated values
-		generated.delete(a);
-		generated.delete(b);
-		generated.add(result);
-
-		steps.push(`${a} ${operator} ${b} = ${result}`);
-
-		// if the result is within the range, and there are no unused results, and there is more than 1 step, return
-		if (result > minTarget && result < maxTarget && generated.size < 2 && ops >= minOps)
-			return [result, steps];
-
-		// reset if no target was created before combining all numbers
-		if (ops >= maxOps) {
-			// console.log("resetting");
-			nums = [...numList];
-			steps = [];
-			result = null;
-			ops = 0;
-			generated = new Set();
+		for (const [value, steps] of values) {
+			const previous = shortest.get(value);
+			if (!previous || steps.length < previous.length) shortest.set(value, steps);
 		}
 	}
-	return [0, ['']]; // to quiet linter
+	return shortest;
 };
 
-export { NUMBERBANKS, OPERATORS, generateNumLists, generatePuzzle, operate };
+/**
+ * Verify arithmetic, operand availability, the final target, and optimal length.
+ * Unused steps and replaceable intermediates cannot occur in a shortest solution.
+ * @param {number[]} numList
+ * @param {number} target
+ * @param {string[]} steps
+ * @returns {boolean}
+ */
+const verifySolution = (numList, target, steps) => {
+	if (
+		numList.length < 1 ||
+		numList.length > 6 ||
+		!numList.every((number) => Number.isSafeInteger(number) && number >= 0) ||
+		!Number.isSafeInteger(target) ||
+		target < 0 ||
+		steps.length > numList.length - 1
+	)
+		return false;
+	const available = [...numList];
+	let final = null;
+	for (const step of steps) {
+		const match = /^(\d+) ([+×÷-]) (\d+) = (\d+)$/.exec(step);
+		if (!match) return false;
+		const [, first, operator, second, output] = match;
+		const a = Number(first),
+			b = Number(second),
+			result = Number(output);
+		if (!Number.isSafeInteger(result) || operate(operator, a, b) !== result) return false;
+		for (const operand of [a, b]) {
+			const index = available.indexOf(operand);
+			if (index === -1) return false;
+			available.splice(index, 1);
+		}
+		available.push(result);
+		final = result;
+	}
+	if (steps.length ? final !== target : !available.includes(target)) return false;
+	return findSolutions(numList, steps.length).get(target)?.length === steps.length;
+};
+
+/**
+ * Choose a target whose shortest solution meets the operation limits.
+ * @param {number[]} numList The starting numbers
+ * @param {number} minTarget The exclusive lower target bound
+ * @param {number} maxTarget The exclusive upper target bound
+ * @param {number} minOps The minimum required operations
+ * @param {number} maxOps The maximum required operations
+ * @returns {[number, string[]]}
+ */
+const generatePuzzle = (numList, minTarget, maxTarget, minOps = 3, maxOps = 4) => {
+	if (
+		numList.length < 2 ||
+		numList.length > 6 ||
+		!numList.every((number) => Number.isSafeInteger(number) && number >= 0) ||
+		!Number.isSafeInteger(minOps) ||
+		!Number.isSafeInteger(maxOps) ||
+		minOps < 1 ||
+		minOps > maxOps ||
+		maxOps >= numList.length ||
+		!Number.isFinite(minTarget) ||
+		!Number.isFinite(maxTarget) ||
+		minTarget >= maxTarget
+	)
+		throw new RangeError('Invalid puzzle generation limits or starting numbers');
+	const candidates = [...findSolutions(numList, maxOps)].filter(
+		([target, steps]) => target > minTarget && target < maxTarget && steps.length >= minOps
+	);
+	if (!candidates.length) throw new RangeError('No puzzle meets the target and operation limits');
+	return pickRandom(candidates);
+};
+
+export { NUMBERBANKS, OPERATORS, generateNumLists, generatePuzzle, operate, verifySolution };
