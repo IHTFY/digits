@@ -8,7 +8,7 @@ const getDateSeed = (date = new Date()) => {
 };
 
 /**
- * Preserve the original zero-based-month seed so daily puzzles do not change.
+ * Preserve the original zero-based-month seed for daily number lists.
  * @param {Date} [date]
  * @returns {number}
  */
