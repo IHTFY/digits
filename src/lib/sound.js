@@ -1,10 +1,13 @@
 import { base } from '$app/paths';
+import { get } from 'svelte/store';
+import { soundOn } from './stores.js';
 
 /** @type {HTMLAudioElement[]} */
 const sounds = [];
 
 /** @param {number} index */
 export function playSound(index) {
+	if (!get(soundOn)) return;
 	try {
 		const sound = (sounds[index] ||= new Audio(`${base}/blips/${index}.mp3`));
 		sound.currentTime = 0;

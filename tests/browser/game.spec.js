@@ -291,6 +291,26 @@ test('theme and revealed solution persist, and instructions support Escape', asy
 	await expect(page.getByRole('dialog')).toBeHidden();
 });
 
+test('sound preference persists and silences playback', async ({ page }) => {
+	await page.addInitScript(() => {
+		let played = 0;
+		HTMLMediaElement.prototype.play = () => {
+			played++;
+			return Promise.resolve();
+		};
+		Object.defineProperty(window, 'played', { get: () => played });
+	});
+	await openGame(page);
+	await page.getByRole('button', { name: 'Mute sounds' }).click();
+	await page.reload();
+	await expect(page.getByRole('button', { name: 'Unmute sounds' })).toBeVisible();
+	await page.getByRole('button', { name: 'Reset puzzle' }).click();
+	expect(await page.evaluate(() => Reflect.get(window, 'played'))).toBe(0);
+	await page.getByRole('button', { name: 'Unmute sounds' }).click();
+	await page.getByRole('button', { name: 'Reset puzzle' }).click();
+	expect(await page.evaluate(() => Reflect.get(window, 'played'))).toBe(1);
+});
+
 test('unavailable storage does not prevent playing', async ({ page }) => {
 	await page.addInitScript(() => {
 		Storage.prototype.getItem = () => {
