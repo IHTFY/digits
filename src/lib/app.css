@@ -65,8 +65,12 @@ a:focus-visible {
 }
 .app-header {
 	display: grid;
-	grid-template-columns: 44px minmax(0, 1fr) 44px;
+	grid-template-columns: 88px minmax(0, 1fr) 88px;
 	align-items: center;
+}
+.header-actions {
+	display: flex;
+	justify-content: flex-end;
 }
 .app-header > strong {
 	text-align: center;

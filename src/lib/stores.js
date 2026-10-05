@@ -3,6 +3,7 @@ import { writable } from 'svelte/store';
 import { combine, createStep, undo } from './game.js';
 
 const theme = writable('light');
+const soundOn = writable(true);
 
 const currentPuzzleIndex = writable(0);
 
@@ -65,4 +66,4 @@ function createPuzzles() {
 const puzzleData = createPuzzles();
 const modal = writable(false);
 
-export { currentPuzzleIndex, modal, puzzleData, theme };
+export { currentPuzzleIndex, modal, puzzleData, soundOn, theme };

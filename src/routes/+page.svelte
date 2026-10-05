@@ -1,8 +1,8 @@
 <script>
 	import '@picocss/pico/css/pico.css';
 	import '$lib/app.css';
-	import { modal, theme } from '$lib/stores';
-	import { Code, Heart, House, Info, Menu, Moon, Sun, X } from '@lucide/svelte';
+	import { modal, soundOn, theme } from '$lib/stores';
+	import { Code, Heart, House, Info, Menu, Moon, Sun, Volume2, VolumeX, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import Board from './board.svelte';
 	import Instructions from './instructions.svelte';
@@ -27,6 +27,7 @@
 		try {
 			const storedTheme = localStorage.getItem('theme');
 			if (storedTheme === 'light' || storedTheme === 'dark') theme.set(storedTheme);
+			if (localStorage.getItem('sound') === 'off') soundOn.set(false);
 		} catch {
 			/* Play without a stored preference. */
 		}
@@ -38,6 +39,14 @@
 		theme.update((value) => (value === 'dark' ? 'light' : 'dark'));
 		try {
 			localStorage.setItem('theme', $theme);
+		} catch {
+			/* Optional preference. */
+		}
+	}
+	function toggleSound() {
+		soundOn.update((value) => !value);
+		try {
+			localStorage.setItem('sound', $soundOn ? 'on' : 'off');
 		} catch {
 			/* Optional preference. */
 		}
@@ -95,13 +104,22 @@
 			</ul>
 		</div>
 		<strong>Digits</strong>
-		<button
-			class="icon-button"
-			onclick={toggleTheme}
-			aria-label={$theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
-		>
-			{#if $theme === 'light'}<Moon size={22} />{:else}<Sun size={22} />{/if}
-		</button>
+		<div class="header-actions">
+			<button
+				class="icon-button"
+				onclick={toggleSound}
+				aria-label={$soundOn ? 'Mute sounds' : 'Unmute sounds'}
+			>
+				{#if $soundOn}<Volume2 size={22} />{:else}<VolumeX size={22} />{/if}
+			</button>
+			<button
+				class="icon-button"
+				onclick={toggleTheme}
+				aria-label={$theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
+			>
+				{#if $theme === 'light'}<Moon size={22} />{:else}<Sun size={22} />{/if}
+			</button>
+		</div>
 	</header>
 	<main><Board /></main>
 </div>
