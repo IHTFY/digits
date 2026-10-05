@@ -2,7 +2,7 @@
 	import '@picocss/pico/css/pico.css';
 	import '$lib/app.css';
 	import { modal, theme } from '$lib/stores';
-	import { Code, House, Info, Menu, Moon, Sun, X } from '@lucide/svelte';
+	import { Code, Heart, House, Info, Menu, Moon, Sun, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import Board from './board.svelte';
 	import Instructions from './instructions.svelte';
@@ -85,6 +85,11 @@
 				<li>
 					<a href="https://github.com/IHTFY/digits" target="_blank" rel="noreferrer"
 						><Code size={18} /> Code</a
+					>
+				</li>
+				<li>
+					<a href="https://ihtfy.com/support/" target="_blank" rel="noopener"
+						><Heart size={18} /> Support</a
 					>
 				</li>
 			</ul>
