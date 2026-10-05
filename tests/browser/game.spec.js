@@ -436,7 +436,7 @@ for (const [width, height] of [
 				};
 			})
 		);
-		expect(rows).toHaveLength(3);
+		expect(rows).toHaveLength(4);
 		for (const row of rows) {
 			Object.values(row).forEach((value, index) => {
 				expect(Math.abs(Number(value) - Number(Object.values(rows[0])[index]))).toBeLessThan(0.1);
