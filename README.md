@@ -51,6 +51,7 @@ check is skipped due to [Playwright issue #42775](https://github.com/microsoft/p
 
 ## Deploy
 
-After merging a reviewed change and passing checks, run `pnpm build` and
-`pnpm ghdeploy` to publish to the existing `gh-pages` branch. The build includes
-the custom domain and offline service worker.
+Merging to `main` publishes the site automatically. The Checks workflow runs every
+check above, then deploys the build to GitHub Pages at `digits.ihtfy.com`. Pull
+requests run the checks without deploying. The custom domain is set in the
+repository's Pages settings.
