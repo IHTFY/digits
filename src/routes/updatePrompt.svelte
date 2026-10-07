@@ -12,7 +12,7 @@
 		let disposed = false;
 		const listeners = new AbortController();
 		const options = { signal: listeners.signal };
-		const hadController = !!navigator.serviceWorker.controller;
+		let controlled = !!navigator.serviceWorker.controller;
 		/** @type {ServiceWorkerRegistration | undefined} */
 		let registration;
 
@@ -42,8 +42,13 @@
 		navigator.serviceWorker.addEventListener(
 			'controllerchange',
 			() => {
-				// The first install claims the page; only reload when replacing an older version.
-				if (!hadController || reloading) return;
+				// The first install claims the page and needs no reload; later changes are updates,
+				// including ones that arrive in the same session as that first install.
+				if (!controlled) {
+					controlled = true;
+					return;
+				}
+				if (reloading) return;
 				reloading = true;
 				location.reload();
 			},
