@@ -1,3 +1,4 @@
+import { readFile, writeFile } from 'node:fs/promises';
 import { test, expect } from '@playwright/test';
 import { createStep, combine } from '../../src/lib/game.js';
 
@@ -374,6 +375,32 @@ test('the service worker keeps updates waiting until the player accepts them', a
 	});
 	expect(registration.active).toBe(true);
 	await expect(page.locator('.update-prompt')).toHaveCount(0);
+});
+
+test('an update found in the same session as the first install applies and reloads', async ({
+	page,
+	browserName
+}) => {
+	test.skip(browserName !== 'chromium', 'One browser is enough to change the served files');
+	// `vite preview` serves SvelteKit's client output, not the adapter's build folder.
+	const workerFile = new URL('../../.svelte-kit/output/client/service-worker.js', import.meta.url);
+	await openGame(page);
+	// First visit: the new worker claims the page without a reload.
+	await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+	const original = await readFile(workerFile, 'utf8');
+	const [, version] = /** @type {RegExpMatchArray} */ (original.match(/cache-(\d+)/));
+	// A same-length version keeps the static server's cached file size valid.
+	const next = version.split('').reverse().join('');
+	try {
+		await writeFile(workerFile, original.replace(`cache-${version}`, `cache-${next}`));
+		await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+		await expect(page.locator('.update-prompt')).toBeVisible();
+		const reloaded = page.waitForEvent('load');
+		await page.getByRole('button', { name: 'Update' }).click();
+		await reloaded;
+	} finally {
+		await writeFile(workerFile, original);
+	}
 });
 
 for (const [width, height] of [
