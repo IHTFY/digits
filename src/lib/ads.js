@@ -28,13 +28,18 @@ const load = () =>
 
 /** Loads the loader now if this browser holds an ad-free token; the loader checks it. */
 export function loadForBuyer() {
-	let stored = null;
+	let held = false;
 	try {
-		stored = localStorage.getItem('ihtfy-ad-free');
+		held = !!localStorage.getItem('ihtfy-ad-free');
 	} catch {
 		// Storage off: the cookie may still hold the token.
 	}
-	if (stored || /(?:^|;\s*)ihtfy-ad-free=/.test(document.cookie)) load().catch(() => {});
+	try {
+		held ||= /(?:^|;\s*)ihtfy-ad-free=/.test(document.cookie);
+	} catch {
+		// Cookies off too: treat the visitor as having no token.
+	}
+	if (held) load().catch(() => {});
 }
 
 /**

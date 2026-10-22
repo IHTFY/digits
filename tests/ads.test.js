@@ -114,3 +114,19 @@ test('loadForBuyer loads the loader at startup when only the cookie holds a toke
 	loadForBuyer();
 	assert.equal(scripts.length, 1);
 });
+
+test('loadForBuyer does not throw when storage and cookies are both denied', async () => {
+	globalThis.localStorage = /** @type {any} */ ({
+		getItem: () => {
+			throw new Error('storage off');
+		}
+	});
+	Object.defineProperty(document, 'cookie', {
+		get() {
+			throw new Error('cookies off');
+		}
+	});
+	const { loadForBuyer } = await loadAds();
+	loadForBuyer();
+	assert.equal(scripts.length, 0);
+});
