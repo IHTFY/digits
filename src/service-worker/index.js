@@ -44,18 +44,22 @@ self.addEventListener('fetch', (event) => {
 	// ignore POST requests etc
 	if (event.request.method !== 'GET') return;
 
+	// Other sites' requests, including the ad loader, AdSense, and its consent message, go
+	// straight to the network: never cached, never answered by this worker.
+	if (new URL(event.request.url).origin !== self.location.origin) return;
+
 	async function respond() {
 		const url = new URL(event.request.url);
 		const cache = await caches.open(CACHE);
 
 		// `build`/`files`/`prerendered` are served from the cache, never the network
-		if (url.origin === self.location.origin && PRECACHED.has(url.pathname)) {
+		if (PRECACHED.has(url.pathname)) {
 			const cached = await cache.match(url.pathname);
 			if (cached) return cached;
 		}
 
 		// Page loads (including start_url and ?query variants) get the app shell
-		if (event.request.mode === 'navigate' && url.origin === self.location.origin) {
+		if (event.request.mode === 'navigate') {
 			const shell = await cache.match(`${base}/`);
 			if (shell) return shell;
 		}
