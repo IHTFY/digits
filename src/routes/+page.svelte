@@ -1,6 +1,7 @@
 <script>
 	import '@picocss/pico/css/pico.css';
 	import '$lib/app.css';
+	import { loadForBuyer } from '$lib/ads';
 	import { modal, puzzleData, soundOn, theme } from '$lib/stores';
 	import { getDateSeed } from '$lib/utils';
 	import {
@@ -45,6 +46,7 @@
 	let finishedOnOpen = $state(true);
 	const adKey = $derived(finished && !finishedOnOpen ? `digits:${getDateSeed()}` : '');
 	onMount(() => {
+		loadForBuyer();
 		// The board has already loaded the saved game: it mounts before this page does.
 		finishedOnOpen = finished;
 		try {
