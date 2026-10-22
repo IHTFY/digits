@@ -1,9 +1,23 @@
 <script>
 	import '@picocss/pico/css/pico.css';
 	import '$lib/app.css';
-	import { modal, soundOn, theme } from '$lib/stores';
-	import { Code, Heart, House, Info, Menu, Moon, Sun, Volume2, VolumeX, X } from '@lucide/svelte';
+	import { modal, puzzleData, soundOn, theme } from '$lib/stores';
+	import { getDateSeed } from '$lib/utils';
+	import {
+		Code,
+		Heart,
+		House,
+		Info,
+		Menu,
+		Moon,
+		Shield,
+		Sun,
+		Volume2,
+		VolumeX,
+		X
+	} from '@lucide/svelte';
 	import { onMount } from 'svelte';
+	import AdSlot from './adSlot.svelte';
 	import Board from './board.svelte';
 	import Instructions from './instructions.svelte';
 	import UpdatePrompt from './updatePrompt.svelte';
@@ -23,7 +37,16 @@
 		menuButton.focus();
 		modal.set(true);
 	}
+	// The day is finished when every puzzle is solved or its solution shown. The ad slot appears
+	// when that happens during this visit, so opening the page on a finished day shows no ad.
+	const finished = $derived(
+		$puzzleData.every((puzzle) => puzzle.revealed || puzzle.distance === 0)
+	);
+	let finishedOnOpen = $state(true);
+	const adKey = $derived(finished && !finishedOnOpen ? `digits:${getDateSeed()}` : '');
 	onMount(() => {
+		// The board has already loaded the saved game: it mounts before this page does.
+		finishedOnOpen = finished;
 		try {
 			const storedTheme = localStorage.getItem('theme');
 			if (storedTheme === 'light' || storedTheme === 'dark') theme.set(storedTheme);
@@ -101,6 +124,11 @@
 						><Heart size={18} /> Support</a
 					>
 				</li>
+				<li>
+					<a href="https://ihtfy.com/privacy" target="_blank" rel="noopener"
+						><Shield size={18} /> Privacy</a
+					>
+				</li>
 			</ul>
 		</div>
 		<strong>Digits</strong>
@@ -123,5 +151,6 @@
 	</header>
 	<main><Board /></main>
 </div>
+{#if adKey}<AdSlot {adKey} />{/if}
 <Instructions />
 <UpdatePrompt />
