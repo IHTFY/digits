@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { afterEach, beforeEach, test } from 'node:test';
+import { afterEach, beforeEach, mock, test } from 'node:test';
 
 /** @type {any[]} */
 let scripts;
@@ -11,6 +11,9 @@ let store;
 beforeEach(() => {
 	scripts = [];
 	globalThis.window = /** @type {any} */ (globalThis);
+	const events = new EventTarget();
+	globalThis.addEventListener = events.addEventListener.bind(events);
+	globalThis.dispatchEvent = events.dispatchEvent.bind(events);
 	Object.defineProperty(globalThis, 'navigator', {
 		value: { onLine: true },
 		configurable: true,
@@ -33,6 +36,7 @@ beforeEach(() => {
 
 afterEach(() => {
 	delete (/** @type {any} */ (globalThis).ihtfyAds);
+	mock.timers.reset();
 });
 
 /** @type {any[][]} */
@@ -129,4 +133,67 @@ test('loadForBuyer does not throw when storage and cookies are both denied', asy
 	const { loadForBuyer } = await loadAds();
 	loadForBuyer();
 	assert.equal(scripts.length, 0);
+});
+
+test('mayBeAdFree finds a token in localStorage or the cookie', async () => {
+	const { mayBeAdFree } = await loadAds();
+	assert.equal(mayBeAdFree(), false);
+	store.set('ihtfy-ad-free', 'token');
+	assert.equal(mayBeAdFree(), true);
+	store.clear();
+	document.cookie = 'ihtfy-ad-free=token';
+	assert.equal(mayBeAdFree(), true);
+});
+
+test('showPlayAd loads nothing until the first tap or key press', async () => {
+	const { showPlayAd } = await loadAds();
+	const a = box();
+	showPlayAd(a, 'play/1');
+	await tick();
+	assert.equal(scripts.length, 0);
+	dispatchEvent(new Event('keydown'));
+	await tick();
+	assert.equal(scripts.length, 1);
+	scripts[0].dispatchEvent(new Event('load'));
+	await tick();
+	assert.deepEqual(shown, [[a, 'play/1']]);
+});
+
+test('showPlayAd skips a box that left the page before the first input', async () => {
+	const { showPlayAd } = await loadAds();
+	const old = box();
+	showPlayAd(old, 'play/1');
+	old.isConnected = false;
+	dispatchEvent(new Event('pointerdown'));
+	await tick();
+	assert.equal(scripts.length, 0);
+});
+
+test('playAdDue waits a minute after the last ad beside the puzzles was requested', async () => {
+	mock.timers.enable({ apis: ['Date'], now: 1_000_000 });
+	const { playAdDue, showPlayAd } = await loadAds();
+	assert.equal(playAdDue(), true);
+	showPlayAd(box(), 'play/1');
+	dispatchEvent(new Event('pointerdown'));
+	await tick();
+	assert.equal(playAdDue(), false);
+	mock.timers.tick(59_999);
+	assert.equal(playAdDue(), false);
+	mock.timers.tick(1);
+	assert.equal(playAdDue(), true);
+});
+
+test('confirmAdFree asks the loader whether the token is valid', async () => {
+	const { confirmAdFree } = await loadAds();
+	/** @type {any} */ (globalThis).ihtfyAds.adFree = async () => false;
+	const answer = confirmAdFree();
+	scripts[0].dispatchEvent(new Event('load'));
+	assert.equal(await answer, false);
+});
+
+test('confirmAdFree keeps the box hidden when the loader fails to load', async () => {
+	const { confirmAdFree } = await loadAds();
+	const answer = confirmAdFree();
+	scripts[0].dispatchEvent(new Event('error'));
+	assert.equal(await answer, true);
 });

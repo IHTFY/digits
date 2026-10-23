@@ -191,6 +191,36 @@ a:focus-visible {
 	height: 250px;
 	min-height: 250px;
 }
+/* With an ad beside it, the game keeps its full width and the two center as one group. */
+.play-frame.with-ad {
+	display: grid;
+	grid-template-columns: 1120px auto;
+	justify-content: center;
+}
+/* The column is as wide as the ad, with the label and links above it. */
+.play-ad {
+	display: grid;
+	grid-template-columns: min-content;
+	align-content: start;
+	gap: 4px;
+	margin-left: 150px;
+	padding: 12px 16px 0 0;
+	font-size: 0.75rem;
+	color: var(--pico-muted-color);
+}
+.play-ad-row {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	column-gap: 12px;
+}
+.play-ad-row p {
+	margin: 0;
+}
+/* The loader adds "Remove ads" beside Privacy, which leaves no room for the label on the narrow size: the label takes a line of its own from the start, so the ad doesn't move. */
+.play-ad.narrow .play-ad-row p {
+	flex-basis: 100%;
+}
 main {
 	min-width: 0;
 	min-height: 0;
@@ -466,7 +496,7 @@ progress {
 /* Native modal provides focus trapping, Escape dismissal, and focus restoration. */
 dialog#instructions {
 	position: fixed;
-	inset: 0;
+	inset: 0 var(--play-ad-right, 0px) 0 0;
 	width: min(600px, calc(100% - 32px));
 	min-width: 0;
 	min-height: 0;
@@ -497,7 +527,9 @@ dialog#instructions[open] {
 	opacity: 1;
 	transform: translateY(0) scale(1);
 }
+/* Both stop short of the ad beside the game, if there is one. */
 dialog#instructions::backdrop {
+	right: var(--play-ad-right, 0px);
 	background: rgba(17, 25, 31, 0.55);
 	backdrop-filter: blur(3px);
 }
