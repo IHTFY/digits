@@ -12,3 +12,5 @@ vite.config.ts.timestamp-*
 /og
 /test-results
 /playwright-report
+# Local notes and reviews, never committed
+.local/
