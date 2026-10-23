@@ -182,3 +182,18 @@ test('playAdDue waits a minute after the last ad beside the puzzles was requeste
 	mock.timers.tick(1);
 	assert.equal(playAdDue(), true);
 });
+
+test('confirmAdFree asks the loader whether the token is valid', async () => {
+	const { confirmAdFree } = await loadAds();
+	/** @type {any} */ (globalThis).ihtfyAds.adFree = async () => false;
+	const answer = confirmAdFree();
+	scripts[0].dispatchEvent(new Event('load'));
+	assert.equal(await answer, false);
+});
+
+test('confirmAdFree keeps the box hidden when the loader fails to load', async () => {
+	const { confirmAdFree } = await loadAds();
+	const answer = confirmAdFree();
+	scripts[0].dispatchEvent(new Event('error'));
+	assert.equal(await answer, true);
+});

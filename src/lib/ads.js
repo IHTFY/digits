@@ -55,6 +55,17 @@ export function mayBeAdFree() {
 	return held;
 }
 
+/**
+ * Whether the loader accepts this browser's ad-free token. A loader that fails
+ * to load counts as yes, since no ad could load then either.
+ * @returns {Promise<boolean>}
+ */
+export const confirmAdFree = () =>
+	load().then(
+		() => window.ihtfyAds.adFree(),
+		() => true
+	);
+
 /** Loads the loader now if this browser holds an ad-free token, so it can hide every ad box. */
 export function loadForBuyer() {
 	if (mayBeAdFree()) load().catch(() => {});

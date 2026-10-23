@@ -1,5 +1,12 @@
 <script>
-	import { PLAY_AD_SIZES, PLAY_AD_SLOT, mayBeAdFree, playAdDue, showPlayAd } from '$lib/ads';
+	import {
+		PLAY_AD_SIZES,
+		PLAY_AD_SLOT,
+		confirmAdFree,
+		mayBeAdFree,
+		playAdDue,
+		showPlayAd
+	} from '$lib/ads';
 	import { currentPuzzleIndex } from '$lib/stores';
 	import { MediaQuery } from 'svelte/reactivity';
 
@@ -7,7 +14,10 @@
 	let { children } = $props();
 
 	// A buyer gets no box at all, even before the loader has checked the token.
-	const buyer = mayBeAdFree();
+	// A token the loader rejects brings the box back.
+	const held = mayBeAdFree();
+	let buyer = $state(held);
+	if (held) confirmAdFree().then((free) => (buyer = free));
 	const queries = PLAY_AD_SIZES.map((placement) => new MediaQuery(placement.query));
 	const size = $derived(buyer ? undefined : PLAY_AD_SIZES.find((_, i) => queries[i].current)?.size);
 	const [width, height] = $derived(size?.split('x') ?? []);
