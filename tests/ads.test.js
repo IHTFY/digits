@@ -4,6 +4,8 @@ import { afterEach, beforeEach, test } from 'node:test';
 /** @type {any[]} */
 let scripts;
 let imports = 0;
+/** @type {Map<string, string>} */
+let store;
 
 // A fake page: script tags are recorded instead of fetched, and boxes say whether they're attached.
 beforeEach(() => {
@@ -14,7 +16,12 @@ beforeEach(() => {
 		configurable: true,
 		writable: true
 	});
+	store = new Map();
+	globalThis.localStorage = /** @type {any} */ ({
+		getItem: (/** @type {string} */ key) => store.get(key) ?? null
+	});
 	globalThis.document = /** @type {any} */ ({
+		cookie: '',
 		createElement: () => Object.assign(new EventTarget(), { remove() {} }),
 		head: { appendChild: (/** @type {any} */ script) => scripts.push(script) }
 	});
@@ -78,4 +85,48 @@ test('skips a box that left the page before the loader arrived', async () => {
 	scripts[0].dispatchEvent(new Event('load'));
 	await tick();
 	assert.deepEqual(shown, [[current, 'one']]);
+});
+
+test('loadForBuyer loads nothing for a visitor without an ad-free token', async () => {
+	const { loadForBuyer } = await loadAds();
+	loadForBuyer();
+	assert.equal(scripts.length, 0);
+});
+
+test('loadForBuyer loads the loader at startup when localStorage holds a token', async () => {
+	store.set('ihtfy-ad-free', 'token');
+	const { loadForBuyer, showAd } = await loadAds();
+	loadForBuyer();
+	assert.equal(scripts.length, 1);
+	assert.equal(scripts[0].src, 'https://ihtfy.com/ads/v1.js');
+	showAd(box(), 'one');
+	assert.equal(scripts.length, 1);
+});
+
+test('loadForBuyer loads the loader at startup when only the cookie holds a token', async () => {
+	document.cookie = 'theme=dark; ihtfy-ad-free=token';
+	globalThis.localStorage = /** @type {any} */ ({
+		getItem: () => {
+			throw new Error('storage off');
+		}
+	});
+	const { loadForBuyer } = await loadAds();
+	loadForBuyer();
+	assert.equal(scripts.length, 1);
+});
+
+test('loadForBuyer does not throw when storage and cookies are both denied', async () => {
+	globalThis.localStorage = /** @type {any} */ ({
+		getItem: () => {
+			throw new Error('storage off');
+		}
+	});
+	Object.defineProperty(document, 'cookie', {
+		get() {
+			throw new Error('cookies off');
+		}
+	});
+	const { loadForBuyer } = await loadAds();
+	loadForBuyer();
+	assert.equal(scripts.length, 0);
 });
