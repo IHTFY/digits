@@ -1,6 +1,6 @@
 <script>
 	import { Star } from '@lucide/svelte';
-	import { playSound } from '$lib/sound';
+	import { playSound } from '#lib/sound.js';
 	/** @type {{targetNumber: number, stars: number, active: boolean, handler: () => void}} */
 	let { targetNumber, stars, active, handler } = $props();
 </script>

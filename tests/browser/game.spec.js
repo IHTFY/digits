@@ -388,11 +388,11 @@ test('an update found in the same session as the first install applies and reloa
 	// First visit: the new worker claims the page without a reload.
 	await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
 	const original = await readFile(workerFile, 'utf8');
-	const [, version] = /** @type {RegExpMatchArray} */ (original.match(/cache-(\d+)/));
+	const [, version] = /** @type {RegExpMatchArray} */ (original.match(/version:`(\d+)`/));
 	// A same-length version keeps the static server's cached file size valid.
 	const next = version.split('').reverse().join('');
 	try {
-		await writeFile(workerFile, original.replace(`cache-${version}`, `cache-${next}`));
+		await writeFile(workerFile, original.replace(`version:\`${version}\``, `version:\`${next}\``));
 		await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
 		await expect(page.locator('.update-prompt')).toBeVisible();
 		const reloaded = page.waitForEvent('load');

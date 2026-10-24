@@ -1,4 +1,4 @@
-import { puzzles } from '$lib/getPuzzle';
+import { puzzles } from '#lib/getPuzzle.js';
 import { writable } from 'svelte/store';
 import { combine, createStep, undo } from './game.js';
 

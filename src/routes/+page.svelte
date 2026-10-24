@@ -1,9 +1,9 @@
 <script>
 	import '@picocss/pico/css/pico.css';
-	import '$lib/app.css';
-	import { loadForBuyer } from '$lib/ads';
-	import { modal, puzzleData, soundOn, theme } from '$lib/stores';
-	import { getDateSeed } from '$lib/utils';
+	import '#lib/app.css';
+	import { loadForBuyer } from '#lib/ads.js';
+	import { modal, puzzleData, soundOn, theme } from '#lib/stores.js';
+	import { getDateSeed } from '#lib/utils.js';
 	import {
 		Code,
 		Heart,

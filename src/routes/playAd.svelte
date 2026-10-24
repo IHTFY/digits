@@ -6,8 +6,8 @@
 		mayBeAdFree,
 		playAdDue,
 		showPlayAd
-	} from '$lib/ads';
-	import { currentPuzzleIndex } from '$lib/stores';
+	} from '#lib/ads.js';
+	import { currentPuzzleIndex } from '#lib/stores.js';
 	import { MediaQuery } from 'svelte/reactivity';
 
 	/** @type {{ children: import('svelte').Snippet }} */

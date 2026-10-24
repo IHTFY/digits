@@ -1,5 +1,5 @@
 <script>
-	import { AD_SLOT, showAd } from '$lib/ads';
+	import { AD_SLOT, showAd } from '#lib/ads.js';
 
 	/** @type {{ adKey: string }} */
 	let { adKey } = $props();
