@@ -1,5 +1,5 @@
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 
 	/** @type {ServiceWorker | null} */
@@ -56,7 +56,7 @@
 		);
 
 		navigator.serviceWorker
-			.register(`${base}/service-worker.js`)
+			.register(`${resolve('/')}service-worker.js`)
 			.then((reg) => {
 				if (disposed) return;
 				registration = reg;

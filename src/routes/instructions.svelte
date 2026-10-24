@@ -1,5 +1,5 @@
 <script>
-	import { modal } from '$lib/stores';
+	import { modal } from '#lib/stores.js';
 	import {
 		ArrowRight,
 		Check,

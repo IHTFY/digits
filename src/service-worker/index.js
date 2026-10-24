@@ -1,15 +1,27 @@
 /// <reference types="@sveltejs/kit" />
 
 // @ts-nocheck
-import { base, build, files, prerendered, version } from '$service-worker';
+import { assets, immutable, prerendered } from '$app/manifest';
+import { version } from '$app/env';
+import { asset, resolve } from '$app/paths';
 
 // Create a unique cache name for this deployment
 const CACHE = `cache-${version}`;
 
+const base = resolve('/').replace(/\/$/, '');
+
 const ASSETS = [
-	...build, // the app itself
-	...files, // everything in `static`
-	...prerendered // prerendered pages
+	...immutable.map((file) => asset(file.path)), // the app itself
+	// everything in `static`, minus deployment metadata and unused sound sources
+	...assets
+		.filter(
+			(file) =>
+				!file.path
+					.split('/')
+					.some((part) => part.startsWith('.') || part === 'CNAME' || part === 'raw')
+		)
+		.map((file) => asset(file.path)),
+	...prerendered.map((page) => resolve(page.path)) // prerendered pages
 ];
 const PRECACHED = new Set(ASSETS);
 

@@ -1,4 +1,4 @@
-import { base } from '$app/paths';
+import { resolve } from '$app/paths';
 import { get } from 'svelte/store';
 import { soundOn } from './stores.js';
 
@@ -9,7 +9,7 @@ const sounds = [];
 export function playSound(index) {
 	if (!get(soundOn)) return;
 	try {
-		const sound = (sounds[index] ||= new Audio(`${base}/blips/${index}.mp3`));
+		const sound = (sounds[index] ||= new Audio(`${resolve('/')}blips/${index}.mp3`));
 		sound.currentTime = 0;
 		void sound.play().catch(() => {});
 	} catch {

@@ -1,8 +1,8 @@
 <script>
-	import { operate } from '$lib/logic';
-	import { currentPuzzleIndex, puzzleData } from '$lib/stores';
-	import { playSound } from '$lib/sound';
-	import RollingNumber from '$lib/RollingNumber.svelte';
+	import { operate } from '#lib/logic.js';
+	import { currentPuzzleIndex, puzzleData } from '#lib/stores.js';
+	import { playSound } from '#lib/sound.js';
+	import RollingNumber from '#lib/RollingNumber.svelte';
 	import { tick } from 'svelte';
 	import { Divide, Minus, Plus, Rewind, SkipBack, X } from '@lucide/svelte';
 

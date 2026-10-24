@@ -1,5 +1,5 @@
 <script>
-	import { currentPuzzleIndex, puzzleData } from '$lib/stores';
+	import { currentPuzzleIndex, puzzleData } from '#lib/stores.js';
 	const puzzle = $derived($puzzleData[$currentPuzzleIndex]);
 	const steps = $derived(puzzle.history.filter((step) => step.result >= 0));
 	const rowCount = $derived(Math.max(steps.length, puzzle.revealed ? puzzle.solution.length : 0));

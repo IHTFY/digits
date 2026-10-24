@@ -1,7 +1,7 @@
 <script>
-	import { currentPuzzleIndex, puzzleData } from '$lib/stores';
-	import { getDateSeed } from '$lib/utils';
-	import { isSavedGame } from '$lib/savedGame';
+	import { currentPuzzleIndex, puzzleData } from '#lib/stores.js';
+	import { getDateSeed } from '#lib/utils.js';
+	import { isSavedGame } from '#lib/savedGame.js';
 	import { onMount } from 'svelte';
 	import Operations from './operations.svelte';
 	import Puzzle from './puzzle.svelte';
