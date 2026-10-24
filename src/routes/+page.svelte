@@ -6,7 +6,7 @@
 	import { getDateSeed } from '$lib/utils';
 	import {
 		Code,
-		Heart,
+		HandHeart,
 		House,
 		Info,
 		Menu,
@@ -127,7 +127,7 @@
 					</li>
 					<li>
 						<a href="https://ihtfy.com/support/" target="_blank" rel="noopener"
-							><Heart size={18} /> Support</a
+							><HandHeart size={18} /> Support ♥</a
 						>
 					</li>
 					<li>
