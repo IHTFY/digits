@@ -3,7 +3,6 @@
 	import '#lib/app.css';
 	import { loadForBuyer } from '#lib/ads.js';
 	import { modal, puzzleData, soundOn, theme } from '#lib/stores.js';
-	import { getDateSeed } from '#lib/utils.js';
 	import {
 		Code,
 		HandHeart,
@@ -18,11 +17,13 @@
 		X
 	} from '@lucide/svelte';
 	import { onMount } from 'svelte';
-	import AdSlot from './adSlot.svelte';
 	import Board from './board.svelte';
 	import Instructions from './instructions.svelte';
 	import PlayAd from './playAd.svelte';
+	import Results from './results.svelte';
 	import UpdatePrompt from './updatePrompt.svelte';
+
+	const RESULTS_DELAY = 1200;
 
 	let menuOpen = $state(false);
 	let menuPosition = $state({ left: 0, top: 0 });
@@ -39,13 +40,25 @@
 		menuButton.focus();
 		modal.set(true);
 	}
-	// The day is finished when every puzzle is solved or its solution shown. The ad slot appears
-	// when that happens during this visit, so opening the page on a finished day shows no ad.
+	// The day is finished when every puzzle is solved or its solution shown. The results screen,
+	// with the ad, replaces the board a moment after that happens during this visit, so opening
+	// the page on a finished day shows neither. It comes once per visit; Review puzzles brings the
+	// board back and removes the ad box.
 	const finished = $derived(
 		$puzzleData.every((puzzle) => puzzle.revealed || puzzle.distance === 0)
 	);
 	let finishedOnOpen = $state(true);
-	const adKey = $derived(finished && !finishedOnOpen ? `digits:${getDateSeed()}` : '');
+	let results = $state(false);
+	let resultsShown = false;
+	$effect(() => {
+		if (!finished || finishedOnOpen || resultsShown || $modal) return;
+		// The last tap has time to land before the screen changes under it.
+		const timer = setTimeout(() => {
+			resultsShown = true;
+			results = true;
+		}, RESULTS_DELAY);
+		return () => clearTimeout(timer);
+	});
 	onMount(() => {
 		loadForBuyer();
 		// The board has already loaded the saved game: it mounts before this page does.
@@ -131,7 +144,7 @@
 						>
 					</li>
 					<li>
-						<a href="https://ihtfy.com/privacy" target="_blank" rel="noopener"
+						<a href="https://ihtfy.com/privacy/" target="_blank" rel="noopener"
 							><Shield size={18} /> Privacy</a
 						>
 					</li>
@@ -155,9 +168,9 @@
 				</button>
 			</div>
 		</header>
-		<main><Board /></main>
+		<main hidden={results}><Board /></main>
+		{#if results}<main><Results onreview={() => (results = false)} /></main>{/if}
 	</div>
 </PlayAd>
-{#if adKey}<AdSlot {adKey} />{/if}
 <Instructions />
 <UpdatePrompt />

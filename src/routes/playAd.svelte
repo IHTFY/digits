@@ -22,7 +22,7 @@
 	const size = $derived(buyer ? undefined : PLAY_AD_SIZES.find((_, i) => queries[i].current)?.size);
 	const [width, height] = $derived(size?.split('x') ?? []);
 
-	// Opening another puzzle a minute or more after the last ad was requested
+	// Opening another puzzle a minute or more after the last ad was placed
 	// gives a new box, so a new ad. Puzzles can take seconds, and the ad never
 	// changes on a timer.
 	let round = $state(0);
@@ -70,7 +70,7 @@
 			<aside class="play-ad" class:narrow={size === '160x600'}>
 				<div class="play-ad-row">
 					<p>Advertisements</p>
-					<a href="https://ihtfy.com/privacy" target="_blank" rel="noopener">Privacy</a>
+					<a href="https://ihtfy.com/privacy/" target="_blank" rel="noopener">Privacy</a>
 				</div>
 				<div
 					bind:this={box}

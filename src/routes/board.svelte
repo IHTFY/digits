@@ -1,6 +1,6 @@
 <script>
 	import { currentPuzzleIndex, puzzleData } from '#lib/stores.js';
-	import { getDateSeed } from '#lib/utils.js';
+	import { getDateSeed, levelFor } from '#lib/utils.js';
 	import { isSavedGame } from '#lib/savedGame.js';
 	import { onMount } from 'svelte';
 	import Operations from './operations.svelte';
@@ -14,11 +14,7 @@
 	// Previous versions encoded months from zero instead of one.
 	const legacyStorageKey = String(dateSeed - 100);
 	const totalStars = $derived($puzzleData.reduce((total, puzzle) => total + puzzle.stars, 0));
-	const level = $derived(
-		['Beginner', 'Moving Up', 'Solid', 'Nice', 'Great', 'Amazing', 'Genius'][
-			totalStars === 15 ? 6 : totalStars === 14 ? 5 : Math.floor(totalStars / 3)
-		]
-	);
+	const level = $derived(levelFor(totalStars));
 	onMount(() => {
 		try {
 			const saved = JSON.parse(
