@@ -175,21 +175,45 @@ a:focus-visible {
 .dropdown li svg {
 	flex-shrink: 0;
 }
+/* The results screen: the result, the button, then the ad. */
+.results {
+	display: grid;
+	justify-items: center;
+	align-content: start;
+	gap: 12px;
+	padding-top: 16px;
+	text-align: center;
+}
+.results h2 {
+	margin: 0;
+	font-size: 1.5rem;
+	line-height: 1.2;
+	outline: none;
+}
+.results-level {
+	margin: 0;
+	color: var(--pico-muted-color);
+}
+.results-level strong {
+	color: #5a9865;
+}
+.results-review {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	margin: 4px 0 0;
+}
+/* The links come first and the label sits between them and the box, which keeps the box 50px from both links. */
 .ad {
 	display: grid;
 	justify-items: center;
-	gap: 6px;
-	padding: 150px 16px 24px;
+	margin-top: 16px;
 	font-size: 0.75rem;
 	color: var(--pico-muted-color);
 }
 .ad p {
-	margin: 0;
-}
-.ad-box {
-	width: 300px;
-	height: 250px;
-	min-height: 250px;
+	margin: 32px 0 4px;
 }
 /* With an ad beside it, the game keeps its full width and the two center as one group. */
 .play-frame.with-ad {

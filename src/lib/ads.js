@@ -1,4 +1,4 @@
-// The ads on the daily results and beside the puzzles come from the shared
+// The ads on the results screen and beside the puzzles come from the shared
 // IHTFY loader, which ihtfy.com serves for all the games (its source is in the
 // IHTFY/com.ihtfy repo). Nothing ad-related loads before the player's first tap
 // or key press: the loader arrives then or when the day is finished, and
@@ -9,6 +9,19 @@ const LOADER = import.meta.env?.VITE_ADS_LOADER || 'https://ihtfy.com/ads/v1.js'
 
 // The shared 300×250 display unit.
 export const AD_SLOT = '6470163205';
+
+// The screens that may hold an ad box. Play never does on a phone; the ad beside
+// the puzzles (PLAY_AD_SIZES) needs a window wider than any phone. The menu and
+// the instructions are a popover and a dialog, which never hold one either.
+/** @type {Record<string, { slot: string, size: string }>} */
+const AD_SCREENS = { results: { slot: AD_SLOT, size: '300x250' } };
+
+/**
+ * The ad box a screen gets, or null for a screen with none and for a visitor who bought ad-free.
+ * @param {string} screen
+ * @param {boolean} buyer
+ */
+export const adForScreen = (screen, buyer) => (buyer ? null : (AD_SCREENS[screen] ?? null));
 
 // The games-play unit: 300×600 in AdSense; the 160×600 box uses it too.
 export const PLAY_AD_SLOT = '7239875855';
@@ -72,14 +85,20 @@ export function loadForBuyer() {
 
 /**
  * Fills `box` with an ad for the finished day named `key`; offline or on failure it stays empty.
+ * Resolves to whether the loader was asked to place the ad.
  * @param {HTMLElement} box
  * @param {string} key
+ * @returns {Promise<boolean>}
  */
 export function showAd(box, key) {
-	if (!navigator.onLine) return;
-	load().then(
-		() => box.isConnected && window.ihtfyAds.show(box, key),
-		() => {}
+	if (!navigator.onLine) return Promise.resolve(false);
+	return load().then(
+		() => {
+			if (!box.isConnected) return false;
+			window.ihtfyAds.show(box, key);
+			return true;
+		},
+		() => false
 	);
 }
 
@@ -90,7 +109,7 @@ const firstInput = new Promise((resolve) => {
 		addEventListener(type, resolve, { once: true, capture: true });
 });
 
-let playAdRequestedAt = -Infinity;
+let playAdPlacedAt = -Infinity;
 
 /**
  * Fills `box` with the ad beside the puzzles, once the player has tapped or pressed a key, if the box is still on the page.
@@ -98,12 +117,12 @@ let playAdRequestedAt = -Infinity;
  * @param {string} key
  */
 export function showPlayAd(box, key) {
-	firstInput.then(() => {
-		if (!box.isConnected) return;
-		playAdRequestedAt = Date.now();
-		showAd(box, key);
-	});
+	firstInput
+		.then(() => box.isConnected && showAd(box, key))
+		.then((placed) => {
+			if (placed) playAdPlacedAt = Date.now();
+		});
 }
 
-/** Whether a newly opened puzzle may get a new ad: the last one beside the puzzles was requested at least a minute ago. */
-export const playAdDue = () => Date.now() - playAdRequestedAt >= 60_000;
+/** Whether a newly opened puzzle may get a new ad: the last one beside the puzzles was placed at least a minute ago. */
+export const playAdDue = () => Date.now() - playAdPlacedAt >= 60_000;

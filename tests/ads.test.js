@@ -169,18 +169,61 @@ test('showPlayAd skips a box that left the page before the first input', async (
 	assert.equal(scripts.length, 0);
 });
 
-test('playAdDue waits a minute after the last ad beside the puzzles was requested', async () => {
+test('playAdDue waits a minute after the last ad beside the puzzles was placed, not requested', async () => {
 	mock.timers.enable({ apis: ['Date'], now: 1_000_000 });
 	const { playAdDue, showPlayAd } = await loadAds();
 	assert.equal(playAdDue(), true);
-	showPlayAd(box(), 'play/1');
+	const a = box();
+	showPlayAd(a, 'play/1');
 	dispatchEvent(new Event('pointerdown'));
 	await tick();
+	// Requested, but the loader is slow: nothing is placed yet.
+	assert.equal(playAdDue(), true);
+	mock.timers.tick(90_000);
+	scripts[0].dispatchEvent(new Event('load'));
+	await tick();
+	assert.deepEqual(shown, [[a, 'play/1']]);
 	assert.equal(playAdDue(), false);
 	mock.timers.tick(59_999);
 	assert.equal(playAdDue(), false);
 	mock.timers.tick(1);
 	assert.equal(playAdDue(), true);
+});
+
+test('playAdDue stays true when the box left the page before the loader arrived', async () => {
+	const { playAdDue, showPlayAd } = await loadAds();
+	const old = box();
+	showPlayAd(old, 'play/1');
+	dispatchEvent(new Event('pointerdown'));
+	await tick();
+	old.isConnected = false;
+	scripts[0].dispatchEvent(new Event('load'));
+	await tick();
+	assert.deepEqual(shown, []);
+	assert.equal(playAdDue(), true);
+});
+
+test('only the results screen gets a box', async () => {
+	const { AD_SLOT, adForScreen } = await loadAds();
+	assert.deepEqual(adForScreen('results', false), { slot: AD_SLOT, size: '300x250' });
+	for (const screen of ['play', 'instructions', 'menu', 'settings', 'home', ''])
+		assert.equal(adForScreen(screen, false), null, screen);
+});
+
+test('a buyer gets no box on any screen', async () => {
+	const { adForScreen } = await loadAds();
+	for (const screen of ['results', 'play', 'instructions', 'menu']) {
+		assert.equal(adForScreen(screen, true), null, screen);
+	}
+});
+
+test('the ad beside the puzzles needs a window wider than any phone', async () => {
+	const { PLAY_AD_SIZES } = await loadAds();
+	assert.ok(PLAY_AD_SIZES.length > 0);
+	for (const { query } of PLAY_AD_SIZES) {
+		const width = Number(/min-width: (\d+)px/.exec(query)?.[1]);
+		assert.ok(width >= 1000, query);
+	}
 });
 
 test('confirmAdFree asks the loader whether the token is valid', async () => {

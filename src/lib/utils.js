@@ -62,4 +62,14 @@ const shuffle = (a, inplace = false, seeded = true) => {
  */
 const getNRandElements = (arr, n) => shuffle([...arr]).slice(0, n);
 
-export { getDateSeed, getLegacyDateSeed, getNRandElements, pickRandom, shuffle };
+/**
+ * The title for a day's total stars out of 15
+ * @param {number} totalStars
+ * @returns {string}
+ */
+const levelFor = (totalStars) =>
+	['Beginner', 'Moving Up', 'Solid', 'Nice', 'Great', 'Amazing', 'Genius'][
+		totalStars === 15 ? 6 : totalStars === 14 ? 5 : Math.floor(totalStars / 3)
+	];
+
+export { getDateSeed, getLegacyDateSeed, getNRandElements, levelFor, pickRandom, shuffle };
