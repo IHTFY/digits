@@ -6,7 +6,6 @@
 	import {
 		Code,
 		Gamepad2,
-		HandHeart,
 		House,
 		Info,
 		Menu,
@@ -142,11 +141,6 @@
 					<li>
 						<a href="https://ihtfy.com/projects/" target="_blank" rel="noopener"
 							><Gamepad2 size={18} /> More games</a
-						>
-					</li>
-					<li>
-						<a href="https://ihtfy.com/support/" target="_blank" rel="noopener"
-							><HandHeart size={18} /> Support ♥</a
 						>
 					</li>
 					<li>
