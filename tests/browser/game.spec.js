@@ -483,7 +483,7 @@ for (const [width, height] of [
 				};
 			})
 		);
-		expect(rows).toHaveLength(5);
+		expect(rows).toHaveLength(6);
 		for (const row of rows) {
 			Object.values(row).forEach((value, index) => {
 				expect(Math.abs(Number(value) - Number(Object.values(rows[0])[index]))).toBeLessThan(0.1);
@@ -491,6 +491,14 @@ for (const [width, height] of [
 		}
 	});
 }
+
+test('the menu links to the games list in a new tab', async ({ page }) => {
+	await openGame(page);
+	await page.getByLabel('Menu', { exact: true }).click();
+	const link = page.getByRole('link', { name: 'More games' });
+	await expect(link).toHaveAttribute('href', 'https://ihtfy.com/projects/');
+	await expect(link).toHaveAttribute('target', '_blank');
+});
 
 for (const reducedMotion of /** @type {const} */ (['no-preference', 'reduce'])) {
 	test(`menu dismisses and instructions restore focus with ${reducedMotion} motion`, async ({
