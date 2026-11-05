@@ -5,6 +5,7 @@
 	import { modal, puzzleData, soundOn, theme } from '#lib/stores.js';
 	import {
 		Code,
+		Gamepad2,
 		HandHeart,
 		House,
 		Info,
@@ -136,6 +137,11 @@
 					<li>
 						<a href="https://github.com/IHTFY/digits" target="_blank" rel="noreferrer"
 							><Code size={18} /> Code</a
+						>
+					</li>
+					<li>
+						<a href="https://ihtfy.com/projects/" target="_blank" rel="noopener"
+							><Gamepad2 size={18} /> More games</a
 						>
 					</li>
 					<li>
