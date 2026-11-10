@@ -95,8 +95,13 @@ export function showAd(box, key) {
 	return load().then(
 		() => {
 			if (!box.isConnected) return false;
-			window.ihtfyAds.show(box, key);
-			return true;
+			try {
+				window.ihtfyAds.show(box, key);
+				return true;
+			} catch {
+				// The loader loaded without defining its ad code.
+				return false;
+			}
 		},
 		() => false
 	);
