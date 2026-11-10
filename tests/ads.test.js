@@ -79,6 +79,14 @@ test('stays quiet when the loader fails, and tries again on the next call', asyn
 	assert.equal(scripts.length, 2);
 });
 
+test('stays quiet when the loader loads but defines no ad code', async () => {
+	delete (/** @type {any} */ (globalThis).ihtfyAds);
+	const { showAd } = await loadAds();
+	const placed = showAd(box(), 'one');
+	scripts[0].dispatchEvent(new Event('load'));
+	assert.equal(await placed, false);
+});
+
 test('skips a box that left the page before the loader arrived', async () => {
 	const { showAd } = await loadAds();
 	const old = box();

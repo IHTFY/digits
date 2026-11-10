@@ -2,7 +2,9 @@
 	import { currentPuzzleIndex, puzzleData } from '#lib/stores.js';
 	import { getDateSeed, levelFor } from '#lib/utils.js';
 	import { isSavedGame } from '#lib/savedGame.js';
+	import { removeOldDays } from '#lib/dayStorage.js';
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import Operations from './operations.svelte';
 	import Puzzle from './puzzle.svelte';
 	import PuzzleTab from './puzzleTab.svelte';
@@ -17,6 +19,11 @@
 	const level = $derived(levelFor(totalStars));
 	onMount(() => {
 		try {
+			removeOldDays(localStorage);
+		} catch {
+			/* Storage is unavailable; there is nothing to clean up. */
+		}
+		try {
 			const saved = JSON.parse(
 				localStorage.getItem(storageKey) ?? localStorage.getItem(legacyStorageKey) ?? 'null'
 			);
@@ -30,9 +37,23 @@
 		function loadTodayOnReturn() {
 			if (document.visibilityState === 'visible' && getDateSeed() !== dateSeed) location.reload();
 		}
+		// Another tab on the same day wrote its progress: pick it up instead of overwriting it.
+		/** @param {StorageEvent} event */
+		function loadFromOtherTab(event) {
+			if (event.storageArea !== localStorage || event.key !== storageKey || !event.newValue) return;
+			try {
+				const saved = JSON.parse(event.newValue);
+				if (isSavedGame(saved) && event.newValue !== JSON.stringify(get(puzzleData)))
+					puzzleData.set(saved);
+			} catch {
+				/* Keep this tab's progress if the other tab's save is damaged. */
+			}
+		}
 		document.addEventListener('visibilitychange', loadTodayOnReturn);
 		window.addEventListener('pageshow', loadTodayOnReturn);
+		window.addEventListener('storage', loadFromOtherTab);
 		return () => {
+			window.removeEventListener('storage', loadFromOtherTab);
 			document.removeEventListener('visibilitychange', loadTodayOnReturn);
 			window.removeEventListener('pageshow', loadTodayOnReturn);
 		};
