@@ -15,6 +15,9 @@ test('saves from days long past are removed on load; recent days, today, and set
 			'digits:20261012',
 			'digits:20261013',
 			'digits:20261019',
+			'digits:20230731:tab',
+			'digits:20261012:tab',
+			'digits:20261019:tab',
 			'20230630',
 			'20260801',
 			// Old keys count months from zero: this one is October 19.
@@ -32,7 +35,9 @@ test('saves from days long past are removed on load; recent days, today, and set
 		[
 			'digits:20261013',
 			'digits:20261019',
+			'digits:20261019:tab',
 			'digits:20261020',
+			'digits:20261020:tab',
 			'20260919',
 			'ihtfy-ad-free',
 			'seeded',

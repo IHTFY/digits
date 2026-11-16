@@ -1,7 +1,7 @@
 <script>
 	import { currentPuzzleIndex, puzzleData } from '#lib/stores.js';
 	import { getDateSeed, levelFor } from '#lib/utils.js';
-	import { isSavedGame } from '#lib/savedGame.js';
+	import { isSavedGame, parseTabIndex } from '#lib/savedGame.js';
 	import { removeOldDays } from '#lib/dayStorage.js';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
@@ -13,6 +13,8 @@
 	const dateSeed = getDateSeed();
 	// Namespacing avoids collisions with old numeric keys from a different month.
 	const storageKey = `digits:${dateSeed}`;
+	// The tab being played lives beside the day's save, so a new day starts on the first one.
+	const tabKey = `${storageKey}:tab`;
 	// Previous versions encoded months from zero instead of one.
 	const legacyStorageKey = String(dateSeed - 100);
 	const totalStars = $derived($puzzleData.reduce((total, puzzle) => total + puzzle.stars, 0));
@@ -30,6 +32,11 @@
 			if (isSavedGame(saved)) puzzleData.set(saved);
 		} catch {
 			/* Start today's puzzles if saved data is unavailable or damaged. */
+		}
+		try {
+			currentPuzzleIndex.set(parseTabIndex(localStorage.getItem(tabKey)));
+		} catch {
+			/* Start on the first puzzle if saved data is unavailable. */
 		}
 		ready = true;
 
@@ -57,6 +64,16 @@
 			document.removeEventListener('visibilitychange', loadTodayOnReturn);
 			window.removeEventListener('pageshow', loadTodayOnReturn);
 		};
+	});
+	$effect(() => {
+		const tab = String($currentPuzzleIndex);
+		if (ready) {
+			try {
+				localStorage.setItem(tabKey, tab);
+			} catch {
+				/* Play without persistence. */
+			}
+		}
 	});
 	$effect(() => {
 		const data = JSON.stringify($puzzleData);

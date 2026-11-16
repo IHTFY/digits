@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { combine, createStep, undo } from '../src/lib/game.js';
-import { isSavedGame } from '../src/lib/savedGame.js';
+import { isSavedGame, parseTabIndex } from '../src/lib/savedGame.js';
 
 function savedGame() {
 	return Array.from({ length: 5 }, () => ({
@@ -152,4 +152,22 @@ test('solutions that do not reach the target with the puzzle numbers are rejecte
 		games[0].solution = solution;
 		assert.equal(isSavedGame(games), false, solution.join(', '));
 	}
+});
+
+test('a stored puzzle tab is used only when it is a whole number from 0 to 4', () => {
+	for (const index of [0, 1, 2, 3, 4]) assert.equal(parseTabIndex(String(index)), index);
+	for (const raw of [
+		null,
+		'',
+		'-1',
+		'5',
+		'1.5',
+		'2e0',
+		' 2',
+		'two',
+		'[2]',
+		'0x2',
+		'99999999999999999999'
+	])
+		assert.equal(parseTabIndex(raw), 0, String(raw));
 });

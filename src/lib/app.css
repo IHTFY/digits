@@ -419,9 +419,6 @@ progress {
 .number-button.travelling {
 	z-index: 3;
 }
-.number-button:disabled {
-	opacity: 1;
-}
 .operator-grid {
 	grid-template-rows: repeat(2, minmax(44px, 1fr));
 }
@@ -434,6 +431,10 @@ progress {
 	padding: 0;
 	border-width: 2px;
 	border-radius: 8px;
+}
+.operator-button[aria-disabled='true'] {
+	opacity: 0.5;
+	pointer-events: none;
 }
 .operator-button.chosen {
 	background: var(--pico-primary-background);

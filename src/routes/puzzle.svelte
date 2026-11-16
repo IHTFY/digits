@@ -75,6 +75,7 @@
 		const source = numberButtons[index];
 		const destination = numberButtons[fromIndex];
 		const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const hadFocus = source === document.activeElement;
 		merging = true;
 		travellingIndex = index;
 		if (!reducedMotion) {
@@ -108,12 +109,16 @@
 		travellingIndex = -1;
 		await tick();
 		if ($currentPuzzleIndex !== puzzleIndex) return;
+		// The tapped number is gone: hand its focus to the result unless the player moved on.
+		const focused = document.activeElement;
+		if (hadFocus && (focused === source || focused === document.body || !focused))
+			destination.focus();
 		announcement = `${result}${result === puzzle.target ? '. Target reached!' : ''}`;
 	}
 
 	/** @param {string} value */
 	function selectOperation(value) {
-		if (merging) return;
+		if (merging || (value === 'undo' && puzzle.history.length < 2)) return;
 		if (value === 'undo' || value === 'reset') {
 			playSound(value === 'undo' ? 3 : 1);
 			if (value === 'undo') puzzleData.undo($currentPuzzleIndex);
@@ -148,7 +153,7 @@
 					hidden={number < 0}
 					aria-label={String(number)}
 					aria-pressed={firstIndex === index}
-					disabled={merging}
+					aria-disabled={merging}
 					onclick={() => selectNumber(index)}
 					><RollingNumber bind:this={numberDisplays[index]} value={number} /></button
 				>
@@ -164,7 +169,7 @@
 				class:chosen={operation === operator.value}
 				aria-label={operator.label}
 				aria-pressed={operation === operator.value}
-				disabled={merging || (operator.value === 'undo' && puzzle.history.length < 2)}
+				aria-disabled={merging || (operator.value === 'undo' && puzzle.history.length < 2)}
 				onclick={() => selectOperation(operator.value)}><operator.icon size={24} /></button
 			>
 		{/each}
