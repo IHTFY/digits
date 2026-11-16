@@ -118,6 +118,14 @@ function isPuzzle(value) {
 	return reachesTarget(value.numList, value.target, value.solution);
 }
 
+/**
+ * The puzzle tab saved with a day's game: a whole number from 0 to 4, else the first tab.
+ * @param {string | null} raw
+ */
+export function parseTabIndex(raw) {
+	return raw !== null && /^[0-4]$/.test(raw) ? Number(raw) : 0;
+}
+
 /** @param {unknown} value @returns {value is import('./game.js').Puzzle[]} */
 export function isSavedGame(value) {
 	return Array.isArray(value) && value.length === 5 && value.every(isPuzzle);

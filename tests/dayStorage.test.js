@@ -54,3 +54,21 @@ test("keeps today's old-style key readable across a year boundary", () => {
 	removeOldDays(storage, new Date(2027, 0, 3, 12));
 	assert.deepEqual(storage.keys(), ['20261130', '20261203']);
 });
+
+test('removes the saved puzzle tab of a past day along with its save, and keeps recent ones', () => {
+	const storage = fakeStorage([
+		'digits:20261012:tab',
+		'digits:20261013:tab',
+		'digits:20261020:tab',
+		'digits:20261012',
+		'digits:20261020',
+		'digits:20261020:other'
+	]);
+	removeOldDays(storage, new Date(2026, 9, 20, 12));
+	assert.deepEqual(storage.keys(), [
+		'digits:20261013:tab',
+		'digits:20261020',
+		'digits:20261020:other',
+		'digits:20261020:tab'
+	]);
+});

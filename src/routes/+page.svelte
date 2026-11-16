@@ -16,7 +16,7 @@
 		VolumeX,
 		X
 	} from '@lucide/svelte';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import Board from './board.svelte';
 	import Instructions from './instructions.svelte';
 	import PlayAd from './playAd.svelte';
@@ -74,6 +74,14 @@
 	$effect(() => {
 		document.documentElement.setAttribute('data-theme', $theme);
 	});
+	// The results screen goes away under the focused button: put focus on the board.
+	async function review() {
+		results = false;
+		await tick();
+		/** @type {HTMLElement | null} */
+		const firstNumber = document.querySelector('.number-button:not([hidden])');
+		firstNumber?.focus();
+	}
 	function toggleTheme() {
 		theme.update((value) => (value === 'dark' ? 'light' : 'dark'));
 		try {
@@ -169,7 +177,7 @@
 			</div>
 		</header>
 		<main hidden={results}><Board /></main>
-		{#if results}<main><Results onreview={() => (results = false)} /></main>{/if}
+		{#if results}<main><Results onreview={review} /></main>{/if}
 	</div>
 </PlayAd>
 <Instructions />
