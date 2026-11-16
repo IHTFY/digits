@@ -125,6 +125,18 @@ test('stars and distance that the history and scoring cannot produce are rejecte
 	}
 });
 
+test('a longer solution saved by an earlier version is accepted', () => {
+	const games = savedGame();
+	Object.assign(games[0], {
+		numList: [5, 6, 8, 9, 20, 25],
+		target: 174,
+		distance: 149,
+		history: [createStep([5, 6, 8, 9, 20, 25])],
+		solution: ['25 - 5 = 20', '20 + 9 = 29', '6 × 29 = 174']
+	});
+	assert.equal(isSavedGame(games), true);
+});
+
 test('solutions that do not reach the target with the puzzle numbers are rejected', () => {
 	for (const solution of [
 		['1 + 1 = 999'],
@@ -132,7 +144,9 @@ test('solutions that do not reach the target with the puzzle numbers are rejecte
 		['25 - 1 = 24', '5 - 2 = 3', '24 × 3 = 73'],
 		['25 - 1 = 24', '5 - 2 = 3', '24 × 3 = 72', '72 + 10 = 82'],
 		['25 - 1 = 24', '25 - 2 = 23', '24 × 3 = 72'],
-		['25 - 1 = 24', '5 - 2 = 3']
+		['25 - 1 = 24', '5 - 2 = 3'],
+		['25 − 1 = 24', '5 − 2 = 3', '24 × 3 = 72'],
+		[]
 	]) {
 		const games = savedGame();
 		games[0].solution = solution;

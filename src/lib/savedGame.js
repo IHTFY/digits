@@ -1,5 +1,5 @@
 import { starsFor } from './game.js';
-import { operate, verifySolution } from './logic.js';
+import { operate } from './logic.js';
 
 /** @param {unknown} value @returns {value is Record<string, unknown>} */
 function isRecord(value) {
@@ -49,6 +49,32 @@ function isStep(value) {
 	);
 }
 
+const SOLUTION_STEP = /^(\d+) ([+×÷-]) (\d+) = (\d+)$/;
+
+/**
+ * Replay each step on the numbers still available; the last one must make the target.
+ * Only the arithmetic is checked: puzzles from older versions may have longer solutions.
+ * @param {number[]} numList @param {number} target @param {string[]} solution
+ */
+function reachesTarget(numList, target, solution) {
+	const pool = [...numList];
+	let result = -1;
+	for (const step of solution) {
+		const match = SOLUTION_STEP.exec(step);
+		if (!match) return false;
+		const [first, second] = [Number(match[1]), Number(match[3])];
+		for (const operand of [first, second]) {
+			const slot = pool.indexOf(operand);
+			if (slot === -1) return false;
+			pool.splice(slot, 1);
+		}
+		result = Number(match[4]);
+		if (!Number.isSafeInteger(result) || operate(match[2], first, second) !== result) return false;
+		pool.push(result);
+	}
+	return result === target;
+}
+
 /** @param {unknown} value @returns {value is import('./game.js').Puzzle} */
 function isPuzzle(value) {
 	if (
@@ -89,7 +115,7 @@ function isPuzzle(value) {
 	const earned = starsFor(value.distance);
 	const unplayed = value.stars === 0 && value.distance === closest(value.numList);
 	if (value.revealed ? value.stars > earned : value.stars !== earned && !unplayed) return false;
-	return verifySolution(value.numList, value.target, value.solution);
+	return reachesTarget(value.numList, value.target, value.solution);
 }
 
 /** @param {unknown} value @returns {value is import('./game.js').Puzzle[]} */
