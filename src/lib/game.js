@@ -15,7 +15,8 @@ export function createStep(numbers) {
 
 /**
  * @typedef {ReturnType<typeof createStep>} Step
- * @typedef {{ numList: number[], target: number, stars: number, history: Step[], solution: string[], revealed: boolean, distance: number }} Puzzle
+ * @typedef {{ number: number, id: string }} Revision
+ * @typedef {{ numList: number[], target: number, stars: number, history: Step[], solution: string[], revealed: boolean, distance: number, revision?: Revision }} Puzzle
  */
 
 /** Stars earned by the closest distance reached: within 25, within 10, or exact. @param {number} distance */

@@ -33,6 +33,12 @@ function createPuzzles() {
 				if (i !== index) return puzzle;
 				const next = structuredClone(puzzle);
 				change(next);
+				if (JSON.stringify(next) !== JSON.stringify(puzzle)) {
+					next.revision = {
+						number: (puzzle.revision?.number ?? 0) + 1,
+						id: crypto.getRandomValues(new Uint32Array(4)).join('-')
+					};
+				}
 				return next;
 			})
 		);

@@ -93,6 +93,14 @@ function isPuzzle(value) {
 		!value.history.every(isStep)
 	)
 		return false;
+	if (
+		value.revision !== undefined &&
+		(!isRecord(value.revision) ||
+			!isNumber(value.revision.number) ||
+			typeof value.revision.id !== 'string' ||
+			value.revision.id.length === 0)
+	)
+		return false;
 
 	const numbers = [...value.numList];
 	for (const [index, step] of value.history.entries()) {
@@ -129,4 +137,24 @@ export function parseTabIndex(raw) {
 /** @param {unknown} value @returns {value is import('./game.js').Puzzle[]} */
 export function isSavedGame(value) {
 	return Array.isArray(value) && value.length === 5 && value.every(isPuzzle);
+}
+
+/**
+ * Higher revisions win per puzzle, including undo and reset. Concurrent edits use the
+ * edit ID to pick the same winner in every tab. Old saves have revision zero;
+ * their serialized value breaks ties when neither puzzle has an edit ID.
+ * @param {import('./game.js').Puzzle[]} local
+ * @param {import('./game.js').Puzzle[]} incoming
+ */
+export function mergeSavedGames(local, incoming) {
+	return local.map((puzzle, index) => {
+		const other = incoming[index];
+		const revision = puzzle.revision?.number ?? 0;
+		const otherRevision = other.revision?.number ?? 0;
+		if (revision !== otherRevision) return revision > otherRevision ? puzzle : other;
+		const id = puzzle.revision?.id ?? '';
+		const otherId = other.revision?.id ?? '';
+		if (id !== otherId) return id > otherId ? puzzle : other;
+		return JSON.stringify(puzzle) >= JSON.stringify(other) ? puzzle : other;
+	});
 }

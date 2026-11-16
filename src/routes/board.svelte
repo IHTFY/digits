@@ -1,7 +1,7 @@
 <script>
 	import { currentPuzzleIndex, puzzleData } from '#lib/stores.js';
 	import { getDateSeed, levelFor } from '#lib/utils.js';
-	import { isSavedGame, parseTabIndex } from '#lib/savedGame.js';
+	import { isSavedGame, mergeSavedGames, parseTabIndex } from '#lib/savedGame.js';
 	import { removeOldDays } from '#lib/dayStorage.js';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
@@ -19,6 +19,29 @@
 	const legacyStorageKey = String(dateSeed - 100);
 	const totalStars = $derived($puzzleData.reduce((total, puzzle) => total + puzzle.stars, 0));
 	const level = $derived(levelFor(totalStars));
+	/** @param {string | null} raw */
+	function mergeStoredGame(raw) {
+		try {
+			const saved = JSON.parse(raw ?? 'null');
+			if (isSavedGame(saved)) {
+				const current = get(puzzleData);
+				const merged = mergeSavedGames(current, saved);
+				if (JSON.stringify(merged) !== JSON.stringify(current)) puzzleData.set(merged);
+			}
+		} catch {
+			/* Keep this tab's progress if the stored save is damaged. */
+		}
+	}
+	function saveProgress() {
+		try {
+			const stored = localStorage.getItem(storageKey);
+			mergeStoredGame(stored);
+			const data = JSON.stringify(get(puzzleData));
+			if (data !== stored) localStorage.setItem(storageKey, data);
+		} catch {
+			/* Play without persistence. */
+		}
+	}
 	onMount(() => {
 		try {
 			removeOldDays(localStorage);
@@ -48,13 +71,8 @@
 		/** @param {StorageEvent} event */
 		function loadFromOtherTab(event) {
 			if (event.storageArea !== localStorage || event.key !== storageKey || !event.newValue) return;
-			try {
-				const saved = JSON.parse(event.newValue);
-				if (isSavedGame(saved) && event.newValue !== JSON.stringify(get(puzzleData)))
-					puzzleData.set(saved);
-			} catch {
-				/* Keep this tab's progress if the other tab's save is damaged. */
-			}
+			mergeStoredGame(event.newValue);
+			saveProgress();
 		}
 		document.addEventListener('visibilitychange', loadTodayOnReturn);
 		window.addEventListener('pageshow', loadTodayOnReturn);
@@ -76,14 +94,8 @@
 		}
 	});
 	$effect(() => {
-		const data = JSON.stringify($puzzleData);
-		if (ready) {
-			try {
-				localStorage.setItem(storageKey, data);
-			} catch {
-				/* Play without persistence. */
-			}
-		}
+		$puzzleData;
+		if (ready) saveProgress();
 	});
 </script>
 
