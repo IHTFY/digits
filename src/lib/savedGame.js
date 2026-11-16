@@ -1,4 +1,5 @@
-import { operate } from './logic.js';
+import { starsFor } from './game.js';
+import { operate, verifySolution } from './logic.js';
 
 /** @param {unknown} value @returns {value is Record<string, unknown>} */
 function isRecord(value) {
@@ -67,15 +68,28 @@ function isPuzzle(value) {
 	)
 		return false;
 
-	let numbers = [...value.numList];
+	const numbers = [...value.numList];
 	for (const [index, step] of value.history.entries()) {
 		if (!step.numsState.every((number, slot) => number === numbers[slot])) return false;
-		if (index === value.history.length - 1) return step.result === -1;
-		if (step.result === -1) return false;
+		const last = index === value.history.length - 1;
+		if (last !== (step.result === -1)) return false;
+		if (last) break;
 		numbers[step.firstIndex] = step.result;
 		numbers[step.secondIndex] = -1;
 	}
-	return false;
+
+	const target = value.target;
+	/** @param {number[]} state */
+	const closest = (state) =>
+		Math.min(...state.filter((number) => number >= 0).map((number) => Math.abs(number - target)));
+	// Undo keeps the best distance, so it may beat every number in the history but never trail one.
+	if (value.distance > Math.min(...value.history.map((step) => closest(step.numsState))))
+		return false;
+	// Stars start at zero before the first move and stop changing once the solution is shown.
+	const earned = starsFor(value.distance);
+	const unplayed = value.stars === 0 && value.distance === closest(value.numList);
+	if (value.revealed ? value.stars > earned : value.stars !== earned && !unplayed) return false;
+	return verifySolution(value.numList, value.target, value.solution);
 }
 
 /** @param {unknown} value @returns {value is import('./game.js').Puzzle[]} */

@@ -18,6 +18,11 @@ export function createStep(numbers) {
  * @typedef {{ numList: number[], target: number, stars: number, history: Step[], solution: string[], revealed: boolean, distance: number }} Puzzle
  */
 
+/** Stars earned by the closest distance reached: within 25, within 10, or exact. @param {number} distance */
+export function starsFor(distance) {
+	return [25, 10, 0].filter((threshold) => distance <= threshold).length;
+}
+
 /**
  * Commit a valid merge as one history entry. Invalid operations leave the puzzle intact.
  * @param {Puzzle} puzzle
@@ -43,8 +48,7 @@ export function combine(puzzle, firstIndex, operation, secondIndex) {
 			number >= 0 ? Math.min(distance, Math.abs(number - puzzle.target)) : distance,
 		puzzle.distance
 	);
-	if (!puzzle.revealed)
-		puzzle.stars = [25, 10, 0].filter((threshold) => puzzle.distance <= threshold).length;
+	if (!puzzle.revealed) puzzle.stars = starsFor(puzzle.distance);
 	return true;
 }
 
