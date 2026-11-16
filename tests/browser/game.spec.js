@@ -30,7 +30,7 @@ function fixture() {
 		distance: 47,
 		history: [createStep(numList)],
 		revealed: false,
-		solution: ['25 − 1 = 24', '5 − 2 = 3', '24 × 3 = 72']
+		solution: ['25 - 1 = 24', '5 - 2 = 3', '24 × 3 = 72']
 	};
 }
 
@@ -241,7 +241,18 @@ test('the target counts through intermediate values across all five puzzles', as
 		const date = new Date();
 		const key = `digits:${date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate()}`;
 		const games = JSON.parse(localStorage.getItem(key) || '[]');
-		[72, 128, 205, 304, 450].forEach((target, index) => (games[index].target = target));
+		// Saves are checked against their solutions, so each target brings one that reaches it.
+		/** @type {[number, string[]][]} */
+		const puzzles = [
+			[72, ['25 - 1 = 24', '5 - 2 = 3', '24 × 3 = 72']],
+			[128, ['1 + 2 = 3', '5 × 25 = 125', '3 + 125 = 128']],
+			[205, ['2 × 4 = 8', '25 × 8 = 200', '5 + 200 = 205']],
+			[304, ['2 + 10 = 12', '25 × 12 = 300', '4 + 300 = 304']],
+			[450, ['2 × 4 = 8', '10 + 8 = 18', '25 × 18 = 450']]
+		];
+		puzzles.forEach(([target, solution], index) =>
+			Object.assign(games[index], { target, solution })
+		);
 		localStorage.setItem(key, JSON.stringify(games));
 	});
 	await page.reload();

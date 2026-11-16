@@ -62,3 +62,94 @@ test('malformed values and inconsistent histories are rejected', () => {
 	for (const value of [null, {}, [], [null, null, null, null, null]])
 		assert.equal(isSavedGame(value), false);
 });
+
+/** @param {import('../src/lib/game.js').Puzzle} game */
+function solve(game) {
+	combine(game, 5, 'minus', 0); // 25 - 1 = 24
+	combine(game, 3, 'minus', 1); // 5 - 2 = 3
+	combine(game, 5, 'times', 3); // 24 × 3 = 72
+}
+
+test('a played save round-trips exactly', () => {
+	const games = savedGame();
+	solve(games[0]);
+	undo(games[0]);
+	combine(games[1], 5, 'times', 1); // 25 × 2 = 50
+	games[1].revealed = true;
+	combine(games[1], 5, 'plus', 4); // 50 + 10 = 60
+	const restored = JSON.parse(JSON.stringify(games));
+	assert.equal(isSavedGame(restored), true);
+	assert.deepEqual(restored, games);
+});
+
+test('progress kept after undoing a solve or after showing the solution is accepted', () => {
+	const games = savedGame();
+	solve(games[0]);
+	undo(games[0]);
+	undo(games[0]);
+	undo(games[0]);
+	assert.deepEqual([games[0].distance, games[0].stars, games[0].history.length], [0, 3, 1]);
+	combine(games[1], 5, 'times', 1); // 25 × 2 = 50, one star
+	games[1].revealed = true;
+	combine(games[1], 5, 'plus', 4); // 50 + 10 = 60
+	combine(games[1], 5, 'plus', 3); // 60 + 5 = 65, distance 7
+	assert.deepEqual([games[1].distance, games[1].stars], [7, 1]);
+	assert.equal(isSavedGame(games), true);
+});
+
+test('stars and distance that the history and scoring cannot produce are rejected', () => {
+	/** @type {((game: import('../src/lib/game.js').Puzzle) => void)[]} */
+	const mutations = [
+		// Three stars need a distance of 0.
+		(game) => (game.stars = 3),
+		(game) => {
+			game.revealed = true;
+			game.stars = 3;
+		},
+		(game) => {
+			combine(game, 5, 'times', 1); // 25 × 2 = 50, distance 22
+			game.stars = 2;
+		},
+		// The history reached 50, so the best distance is at most 22.
+		(game) => {
+			combine(game, 5, 'times', 1);
+			game.distance = 47;
+			game.stars = 0;
+		},
+		(game) => (game.distance = 48)
+	];
+	for (const mutate of mutations) {
+		const games = savedGame();
+		mutate(games[0]);
+		assert.equal(isSavedGame(games), false);
+	}
+});
+
+test('a longer solution saved by an earlier version is accepted', () => {
+	const games = savedGame();
+	Object.assign(games[0], {
+		numList: [5, 6, 8, 9, 20, 25],
+		target: 174,
+		distance: 149,
+		history: [createStep([5, 6, 8, 9, 20, 25])],
+		solution: ['25 - 5 = 20', '20 + 9 = 29', '6 × 29 = 174']
+	});
+	assert.equal(isSavedGame(games), true);
+});
+
+test('solutions that do not reach the target with the puzzle numbers are rejected', () => {
+	for (const solution of [
+		['1 + 1 = 999'],
+		['1 + 1 = 2'],
+		['25 - 1 = 24', '5 - 2 = 3', '24 × 3 = 73'],
+		['25 - 1 = 24', '5 - 2 = 3', '24 × 3 = 72', '72 + 10 = 82'],
+		['25 - 1 = 24', '25 - 2 = 23', '24 × 3 = 72'],
+		['25 - 1 = 24', '5 - 2 = 3'],
+		['25 − 1 = 24', '5 − 2 = 3', '24 × 3 = 72'],
+		[]
+	]) {
+		const games = savedGame();
+		games[0].solution = solution;
+		assert.equal(isSavedGame(games), false, solution.join(', '));
+	}
+});
