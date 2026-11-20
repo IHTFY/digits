@@ -23,7 +23,7 @@ async function openGame(page) {
 			localStorage.setItem(String(key), JSON.stringify(Array.from({ length: 5 }, () => game)));
 		}
 	}, fixture());
-	await page.goto('/');
+	await page.goto('/?adtest=on');
 	await expect(page.locator('.target-number')).toHaveText('72');
 }
 
@@ -90,22 +90,27 @@ test('Review puzzles puts keyboard focus on the board', async ({ page }) => {
 	await expect(page.locator('.number-button:not([hidden])').first()).toBeFocused();
 });
 
-test('Show Solution continues keyboard navigation from the revealed solution', async ({ page }) => {
-	await openGame(page);
-	const secondPuzzle = page.locator('.puzzle-tab').nth(1);
-	const reveal = page.getByRole('button', { name: 'Show Solution' });
-	for (let index = 0; index < 5; index++) await page.keyboard.press('Tab');
-	await expect(secondPuzzle).toBeFocused();
-	await page.keyboard.press('Space');
-	await expect(secondPuzzle).toHaveAttribute('aria-pressed', 'true');
+test.describe('solution focus beside the desktop ad slot', () => {
+	test.use({ serviceWorkers: 'block', viewport: { width: 1536, height: 864 } });
 
-	for (let index = 0; index < 16; index++) await page.keyboard.press('Tab');
-	await expect(reveal).toBeFocused();
-	await page.keyboard.press('Enter');
-	const solution = page.getByText('Our Solution', { exact: true });
-	await expect(solution).toBeVisible();
-	const focusedAfterReveal = await page.evaluate(() => document.activeElement?.textContent);
-	await page.keyboard.press('Tab');
-	expect(focusedAfterReveal).toBe('Our Solution');
-	await expect(page.getByRole('button', { name: 'Menu' })).toBeFocused();
+	test('Show Solution continues keyboard navigation from the revealed solution', async ({
+		page
+	}) => {
+		await page.route('https://ihtfy.com/ads/v1.js', (route) => route.abort());
+		await openGame(page);
+		const secondPuzzle = page.locator('.puzzle-tab').nth(1);
+		const reveal = page.getByRole('button', { name: 'Show Solution' });
+		for (let index = 0; index < 5; index++) await page.keyboard.press('Tab');
+		await expect(secondPuzzle).toBeFocused();
+		await page.keyboard.press('Space');
+		await expect(secondPuzzle).toHaveAttribute('aria-pressed', 'true');
+
+		for (let index = 0; index < 16; index++) await page.keyboard.press('Tab');
+		await expect(reveal).toBeFocused();
+		await page.keyboard.press('Enter');
+		const solution = page.getByText('Our Solution', { exact: true });
+		await expect(solution).toBeFocused();
+		await page.keyboard.press('Tab');
+		await expect(page.getByRole('link', { name: 'Privacy' })).toBeFocused();
+	});
 });
