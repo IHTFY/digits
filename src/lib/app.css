@@ -47,6 +47,7 @@ button {
 }
 button:focus-visible,
 summary:focus-visible,
+.solution-label:focus-visible,
 a:focus-visible {
 	outline: 3px solid var(--pico-primary);
 	outline-offset: 4px;
