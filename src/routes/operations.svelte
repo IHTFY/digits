@@ -1,8 +1,20 @@
 <script>
+	import { tick } from 'svelte';
 	import { currentPuzzleIndex, puzzleData } from '#lib/stores.js';
 	const puzzle = $derived($puzzleData[$currentPuzzleIndex]);
 	const steps = $derived(puzzle.history.filter((step) => step.result >= 0));
 	const rowCount = $derived(Math.max(steps.length, puzzle.revealed ? puzzle.solution.length : 0));
+	/** @type {HTMLSpanElement | undefined} */
+	let solutionLabel = $state();
+
+	/** @param {MouseEvent & { currentTarget: HTMLButtonElement }} event */
+	async function revealSolution(event) {
+		const hadFocus = document.activeElement === event.currentTarget;
+		puzzleData.reveal($currentPuzzleIndex);
+		await tick();
+		if (hadFocus && document.activeElement === document.body) solutionLabel?.focus();
+	}
+
 	/** @type {Record<string, string>} */
 	const symbols = { plus: '+', minus: '−', times: '×', divide: '÷' };
 </script>
@@ -12,9 +24,11 @@
 		<strong>Your Operations</strong>
 		{#if !puzzle.revealed}<button
 				class="outline solution-button"
-				onclick={() => puzzleData.reveal($currentPuzzleIndex)}
+				onclick={revealSolution}
 				title="You won't earn any more stars for this puzzle">Show Solution</button
-			>{:else}<span class="solution-label">Our Solution</span>{/if}
+			>{:else}<span bind:this={solutionLabel} class="solution-label" tabindex="-1"
+				>Our Solution</span
+			>{/if}
 	</div>
 	<div class="operations-rows" class:revealed={puzzle.revealed}>
 		{#each Array.from({ length: rowCount }, (_, index) => index) as index (index)}
