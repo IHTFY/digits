@@ -8,14 +8,16 @@ test.use({ serviceWorkers: 'block' });
  * A stand-in for the loader: it records each show() and adds the "Remove ads"
  * link beside Privacy the way the real one does. No ad is requested.
  * @param {import('@playwright/test').Page} page
+ * @param {string} [setup] Script run first when the loader arrives, before the page can react to it.
  */
-async function stubLoader(page) {
+async function stubLoader(page, setup = '') {
 	const loads = { count: 0 };
 	await page.route('https://ihtfy.com/ads/v1.js', (route) => {
 		loads.count++;
 		return route.fulfill({
 			contentType: 'text/javascript',
-			body: `window.shown = [];
+			body: `${setup}
+window.shown = [];
 window.ihtfyAds = {
 	show(box, key) {
 		window.shown.push([box.dataset.adSlot, box.dataset.adSize, key]);
@@ -202,6 +204,102 @@ for (const [width, height] of [
 		await expectAdInView(page, 360, 640);
 	});
 }
+
+// A root font size above the default is how an enlarged text setting reaches the page. The heading
+// and the level line wrap, so the stack is taller than the styles estimate.
+for (const [width, height, rootPx] of [
+	[360, 640, 24],
+	[320, 640, 22]
+]) {
+	test(`a ${width}×${height} screen with ${rootPx}px text has the whole ad box in view, or no box and no request`, async ({
+		page
+	}) => {
+		const loads = await stubLoader(page);
+		await page.addInitScript((px) => {
+			document.addEventListener('DOMContentLoaded', () => {
+				document.documentElement.style.fontSize = `${px}px`;
+			});
+		}, rootPx);
+		await page.setViewportSize({ width, height });
+		await finishTheDay(page);
+		await expect(page.locator('.results')).toBeVisible();
+		await page.waitForTimeout(500);
+		const box = page.locator('[data-ad-size]');
+		if (await box.isVisible()) {
+			await expectAdInView(page, width, height);
+		} else {
+			await expectNoAdShowing(page, width, height);
+			expect(loads.count).toBe(0);
+			expect(await page.evaluate(() => window.shown ?? [])).toHaveLength(0);
+		}
+	});
+}
+
+test('a window narrowed until the text wraps hides a shown ad box, and shows it again without a second request', async ({
+	page
+}) => {
+	await stubLoader(page);
+	await page.addInitScript(() => {
+		document.addEventListener('DOMContentLoaded', () => {
+			document.documentElement.style.fontSize = '22px';
+		});
+	});
+	await page.setViewportSize({ width: 360, height: 640 });
+	await finishTheDay(page);
+	await expectAdInView(page, 360, 640);
+
+	// Narrower, the heading wraps and the box would end below the screen.
+	await page.setViewportSize({ width: 320, height: 640 });
+	await expectNoAdShowing(page, 320, 640);
+	expect(await page.evaluate(() => window.shown)).toHaveLength(1);
+
+	await page.setViewportSize({ width: 360, height: 640 });
+	await expectAdInView(page, 360, 640);
+});
+
+test('text made smaller at the same window size brings back a box that enlarged text left out, with one request', async ({
+	page
+}) => {
+	const loads = await stubLoader(page);
+	await page.addInitScript(() => {
+		document.addEventListener('DOMContentLoaded', () => {
+			document.documentElement.style.fontSize = '24px';
+		});
+	});
+	await page.setViewportSize({ width: 360, height: 640 });
+	await finishTheDay(page);
+	await expect(page.locator('.results')).toBeVisible();
+	await expectNoAdShowing(page, 360, 640);
+	await page.waitForTimeout(500);
+	expect(loads.count).toBe(0);
+	expect(await page.evaluate(() => window.shown ?? [])).toHaveLength(0);
+
+	await page.evaluate(() => (document.documentElement.style.fontSize = '16px'));
+	await expectAdInView(page, 360, 640);
+});
+
+test('text enlarged while the ad loader is arriving gets no request for the box, and one once it fits again', async ({
+	page
+}) => {
+	// The loader enlarges the text as it runs, so the box is below the screen before the page
+	// has measured it again.
+	const loads = await stubLoader(page, "document.documentElement.style.fontSize = '24px';");
+	await page.addInitScript(() => {
+		document.addEventListener('DOMContentLoaded', () => {
+			document.documentElement.style.fontSize = '22px';
+		});
+	});
+	await page.setViewportSize({ width: 360, height: 640 });
+	await finishTheDay(page);
+	await expect.poll(() => loads.count).toBe(1);
+	await page.waitForFunction(() => window.ihtfyAds);
+	await expectNoAdShowing(page, 360, 640);
+	await page.waitForTimeout(500);
+	expect(await page.evaluate(() => window.shown)).toHaveLength(0);
+
+	await page.evaluate(() => (document.documentElement.style.fontSize = '22px'));
+	await expectAdInView(page, 360, 640);
+});
 
 test('a phone turned on its side while the ad loader is arriving gets its ad only when upright again', async ({
 	page
