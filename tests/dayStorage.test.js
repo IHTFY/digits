@@ -65,15 +65,15 @@ test('keeps eight-digit keys that no old-style save could have', () => {
 		'20260500',
 		'20260130',
 		'20260331',
-		// Year 0012, which a Date would read as 1912.
-		'00120115',
+		// A leading zero: old versions wrote the date as a number, which has none.
+		'09990015',
 		// Real old-style saves: Feb 28, 2026 and Dec 26, 2026.
 		'20260128',
 		'20261126'
 	]);
 	removeOldDays(storage, new Date(2027, 0, 3, 12));
 	assert.deepEqual(storage.keys(), [
-		'00120115',
+		'09990015',
 		'12345678',
 		'20260130',
 		'20260331',

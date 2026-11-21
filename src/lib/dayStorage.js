@@ -5,16 +5,17 @@ const KEEP_DAYS = 7;
 
 /**
  * The day an old-style key was saved on, as YYYYMMDD, or NaN when the key is not one.
- * Old versions used a bare eight-digit key whose month counted from zero, so
- * only digits that spell a real calendar day that way can be a save.
+ * Old versions used the date as a bare number whose month counted from zero, so
+ * only eight digits that spell a real calendar day that way, with no leading
+ * zero, can be a save.
  * @param {string} key
  */
 function legacyDay(key) {
-	const digits = /^(\d{4})(\d{2})(\d{2})$/.exec(key);
+	const digits = /^([1-9]\d{3})(\d{2})(\d{2})$/.exec(key);
 	if (!digits) return NaN;
 	const [year, month, day] = digits.slice(1).map(Number);
 	const date = new Date(year, month, day);
-	// The Date rolls an impossible month or day over, and reads a year below 100 as 19xx.
+	// The Date rolls an impossible month or day over into another day.
 	const real = date.getFullYear() === year && date.getMonth() === month && date.getDate() === day;
 	return real ? getDateSeed(date) : NaN;
 }
