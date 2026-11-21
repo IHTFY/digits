@@ -59,7 +59,62 @@
 		}, RESULTS_DELAY);
 		return () => clearTimeout(timer);
 	});
+	// The installed app's launch screen carries into the game: the blue folds into the tab of the
+	// puzzle being played while the hash sign lands on its target.
+	function launchIntoGame() {
+		globalThis.launchExit?.((overlay) => {
+			const fill = /** @type {HTMLElement} */ (overlay.querySelector('#launch-fill'));
+			const icon = /** @type {SVGElement} */ (overlay.querySelector('#launch-icon'));
+			const tab = /** @type {HTMLElement} */ (document.querySelector('.puzzle-tab.active'));
+			const target = /** @type {HTMLElement} */ (document.querySelector('.target-number'));
+			const tabBox = tab.getBoundingClientRect();
+			const tabStyle = getComputedStyle(tab);
+			const fold = `inset(${tabBox.top}px ${overlay.clientWidth - tabBox.right}px ${
+				overlay.clientHeight - tabBox.bottom
+			}px ${tabBox.left}px round ${tabStyle.borderRadius})`;
+			/** @param {Element} from @param {Element} to @param {number} scale */
+			const flight = (from, to, scale) => {
+				const a = from.getBoundingClientRect();
+				const b = to.getBoundingClientRect();
+				const dx = b.left + b.width / 2 - (a.left + a.width / 2);
+				const dy = b.top + b.height / 2 - (a.top + a.height / 2);
+				return `translate(${dx}px, ${dy}px) scale(${scale})`;
+			};
+			// The hash is 20 of the icon's 24 units tall, drawn in 84 of its 128 px; it lands at
+			// the height of the target's digits.
+			const hashHeight = icon.getBoundingClientRect().height * (20 / 24) * (84 / 128);
+			const targetDigits = parseFloat(getComputedStyle(target).fontSize) * 0.7;
+			const brand = getComputedStyle(document.documentElement).getPropertyValue('--digits-brand');
+			const timing = {
+				duration: 900,
+				easing: 'cubic-bezier(0.5, 0, 0.2, 1)',
+				fill: /** @type {const} */ ('forwards')
+			};
+			// Each copy fades over the end of its flight, uncovering the real one underneath.
+			const fadeOut = { opacity: [1, 1, 0], offset: [0, 0.75, 1] };
+			return [
+				fill.animate(
+					{
+						clipPath: ['inset(0 round 0)', fold],
+						backgroundColor: ['#1095c1', tabStyle.backgroundColor]
+					},
+					timing
+				),
+				fill.animate(fadeOut, timing),
+				icon.animate(
+					{
+						transform: ['none', flight(icon, target, targetDigits / hashHeight)],
+						color: ['#fff', brand]
+					},
+					timing
+				),
+				icon.animate(fadeOut, timing)
+			];
+		});
+	}
 	onMount(() => {
+		// The board and its saved tab render first: measure them once this update is drawn.
+		tick().then(launchIntoGame);
 		loadForBuyer();
 		// The board has already loaded the saved game: it mounts before this page does.
 		finishedOnOpen = finished;
