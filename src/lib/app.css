@@ -2,13 +2,16 @@
 	--pico-font-size: 16px;
 	--pico-font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	--pico-border-radius: 0.6rem;
-	--pico-primary: #1095c1;
-	--pico-primary-background: #1095c1;
-	--pico-primary-border: #1095c1;
+	/* The brand color is for shapes: rings, icons, stars, and the focus outline. Text in it, and white text on it, are too faint to read (3.4:1), so text and the fills under white text use darker shades of it (4.5:1 or more). */
+	--digits-brand: #1095c1;
+	--pico-primary: #076b8c;
+	--pico-primary-background: #087da4;
+	--pico-primary-border: #087da4;
 	--pico-primary-hover: #087da4;
-	--pico-primary-hover-background: #087da4;
-	--pico-primary-hover-border: #087da4;
+	--pico-primary-hover-background: #076b8c;
+	--pico-primary-hover-border: #076b8c;
 	--pico-primary-focus: rgba(16, 149, 193, 0.22);
+	--pico-progress-color: #1095c1;
 	--pico-primary-inverse: #fff;
 	font-variant-numeric: tabular-nums;
 }
@@ -16,6 +19,7 @@
 :root[data-theme='light'] {
 	--digits-background: #fff;
 	--digits-color: #26343c;
+	--digits-level: #3b7a47;
 	--pico-background-color: #fff;
 	--pico-color: #26343c;
 	--pico-contrast-background: #1b2b34;
@@ -27,10 +31,11 @@
 :root[data-theme='dark'] {
 	--digits-background: #11191f;
 	--digits-color: #dce5ea;
+	--digits-brand: #29b3dd;
+	--digits-level: #5a9865;
 	--pico-background-color: #11191f;
 	--pico-color: #dce5ea;
 	--pico-primary: #29b3dd;
-	--pico-primary-background: #1095c1;
 	--pico-primary-border: #29b3dd;
 }
 
@@ -49,7 +54,7 @@ button:focus-visible,
 summary:focus-visible,
 .solution-label:focus-visible,
 a:focus-visible {
-	outline: 3px solid var(--pico-primary);
+	outline: 3px solid var(--digits-brand);
 	outline-offset: 4px;
 }
 
@@ -87,7 +92,7 @@ a:focus-visible {
 	height: 44px;
 	padding: 0;
 	margin: 0;
-	color: var(--pico-primary);
+	color: var(--digits-brand);
 	background: transparent;
 	border: 0;
 	box-shadow: none;
@@ -198,7 +203,7 @@ a:focus-visible {
 	color: var(--pico-muted-color);
 }
 .results-level strong {
-	color: #5a9865;
+	color: var(--digits-level);
 }
 .results-review {
 	display: flex;
@@ -326,7 +331,7 @@ main {
 	font-size: 0.875rem;
 }
 .progress-label > span:first-child {
-	color: #5a9865;
+	color: var(--digits-level);
 }
 .star-count {
 	color: var(--pico-muted-color);
@@ -399,7 +404,7 @@ progress {
 	padding: 0;
 	display: grid;
 	place-items: center;
-	border: 2px solid var(--pico-primary);
+	border: 2px solid var(--digits-brand);
 	border-radius: 50%;
 	background: var(--digits-background);
 	color: var(--digits-color);
@@ -654,7 +659,7 @@ dialog#instructions p {
 	place-items: center;
 	width: clamp(40px, 11vw, 60px);
 	aspect-ratio: 1;
-	border: 2px solid var(--pico-primary);
+	border: 2px solid var(--digits-brand);
 	border-radius: 50%;
 	background: var(--digits-background);
 	font-size: 1.25rem;
@@ -741,7 +746,7 @@ dialog#instructions p {
 .guide-stars {
 	display: flex;
 	gap: 3px;
-	color: var(--pico-primary);
+	color: var(--digits-brand);
 }
 .guide-solution {
 	display: flex;
