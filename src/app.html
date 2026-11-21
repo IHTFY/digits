@@ -82,8 +82,10 @@
 					return;
 				}
 				root.classList.add('launching');
+				const ended = new AbortController();
 				const end = () => {
 					clearTimeout(fallback);
+					ended.abort();
 					root.classList.remove('launching');
 					document.getElementById('launch')?.remove();
 				};
@@ -112,11 +114,12 @@
 						];
 					}
 					const skip = () => animations.forEach((a) => a.finish());
-					overlay.addEventListener('pointerdown', skip, { once: true });
+					const once = { once: true, signal: ended.signal };
+					overlay.addEventListener('pointerdown', skip, once);
 					// A key acts on the game behind the copy, so the copy gets out of its way.
-					addEventListener('keydown', skip, { once: true });
+					addEventListener('keydown', skip, once);
 					// A turned phone moves the board away from where the animation was aimed.
-					screen.orientation?.addEventListener('change', skip, { once: true });
+					screen.orientation?.addEventListener('change', skip, once);
 					Promise.all(animations.map((a) => a.finished)).then(end, end);
 				};
 			})();
