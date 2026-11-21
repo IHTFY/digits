@@ -89,14 +89,15 @@ export function loadForBuyer() {
  * Resolves to whether the loader was asked to place the ad.
  * @param {HTMLElement} box
  * @param {string} key
+ * @param {() => boolean} [mayShow] Asked once the loader has arrived: false leaves the box empty, for a box that has since moved off the screen.
  * @returns {Promise<boolean>}
  */
-export function showAd(box, key) {
+export function showAd(box, key, mayShow = () => true) {
 	if (!navigator.onLine) return Promise.resolve(false);
 	return load().then(
 		() => {
 			// Off the page, or left out by the styles: either way the box has no width, and gets no ad.
-			if (!box.offsetWidth) return false;
+			if (!box.offsetWidth || !mayShow()) return false;
 			try {
 				window.ihtfyAds.show(box, key);
 				return true;

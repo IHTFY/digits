@@ -32,7 +32,7 @@
 		const observer = new ResizeObserver(async () => {
 			if (!fits() || asking || placed) return;
 			asking = true;
-			placed = await showAd(target, adKey);
+			placed = await showAd(target, adKey, fits);
 			asking = false;
 		});
 		// The box has no size while it is left out, so the screen's size brings it back, and so
