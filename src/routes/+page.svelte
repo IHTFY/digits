@@ -65,7 +65,6 @@
 		globalThis.launchExit?.((overlay) => {
 			const fill = /** @type {HTMLElement} */ (overlay.querySelector('#launch-fill'));
 			const icon = /** @type {SVGElement} */ (overlay.querySelector('#launch-icon'));
-			const name = /** @type {HTMLElement} */ (overlay.querySelector('#launch-name'));
 			const tab = /** @type {HTMLElement} */ (document.querySelector('.puzzle-tab.active'));
 			const target = /** @type {HTMLElement} */ (document.querySelector('.target-number'));
 			const tabBox = tab.getBoundingClientRect();
@@ -109,8 +108,7 @@
 					},
 					timing
 				),
-				icon.animate(fadeOut, timing),
-				name.animate({ opacity: [1, 0] }, { duration: 150, fill: 'forwards' })
+				icon.animate(fadeOut, timing)
 			];
 		});
 	}

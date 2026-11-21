@@ -42,7 +42,8 @@
 		</script>
 		<style>
 			/* Installed-app launch: the first paint copies Chrome's launch screen (manifest background,
-			   maskable icon at 128px, name near the bottom), then launchExit() animates out of it. */
+			   maskable icon at 128px), then launchExit() animates out of it. Chrome places the name from
+			   the bottom of the whole screen rather than of this page, so its own crossfade fades it. */
 			#launch {
 				display: none;
 			}
@@ -64,16 +65,6 @@
 				width: 128px;
 				height: 128px;
 				padding: 22px;
-				color: #fff;
-			}
-			#launch-name {
-				position: absolute;
-				inset: auto 0 56px;
-				font:
-					24px/1 Roboto,
-					system-ui,
-					sans-serif;
-				text-align: center;
 				color: #fff;
 			}
 		</style>
@@ -144,7 +135,6 @@
 					stroke-linecap="round"
 				/>
 			</svg>
-			<span id="launch-name">Digits</span>
 		</div>
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
