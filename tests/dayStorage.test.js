@@ -49,10 +49,37 @@ test('removes day saves more than a week old, in both key styles, and nothing el
 });
 
 test("keeps today's old-style key readable across a year boundary", () => {
-	// Jan 3, 2027: today's old-style key is 20261203 and the cutoff is Dec 27, 2026.
-	const storage = fakeStorage(['20261203', '20261130', '20261126', '20260101']);
+	// Jan 3, 2027: today's old-style key is 20270003 and the cutoff is Dec 27, 2026.
+	// Old-style December keys use month 11: 20261126 is Dec 26 and 20261127 is Dec 27.
+	const storage = fakeStorage(['20270003', '20261130', '20261127', '20261126', '20260101']);
 	removeOldDays(storage, new Date(2027, 0, 3, 12));
-	assert.deepEqual(storage.keys(), ['20261130', '20261203']);
+	assert.deepEqual(storage.keys(), ['20261127', '20261130', '20270003']);
+});
+
+test('keeps eight-digit keys that no old-style save could have', () => {
+	const storage = fakeStorage([
+		// Month 45 and month 12: old-style months ran from 00 to 11.
+		'12345678',
+		'20261203',
+		// Day 00, and days past the end of February and April.
+		'20260500',
+		'20260130',
+		'20260331',
+		// A leading zero: old versions wrote the date as a number, which has none.
+		'09990015',
+		// Real old-style saves: Feb 28, 2026 and Dec 26, 2026.
+		'20260128',
+		'20261126'
+	]);
+	removeOldDays(storage, new Date(2027, 0, 3, 12));
+	assert.deepEqual(storage.keys(), [
+		'09990015',
+		'12345678',
+		'20260130',
+		'20260331',
+		'20260500',
+		'20261203'
+	]);
 });
 
 test('removes the saved puzzle tab of a past day along with its save, and keeps recent ones', () => {
