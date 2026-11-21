@@ -14,6 +14,8 @@ declare global {
 		/** The shared ad loader, once https://ihtfy.com/ads/v1.js has loaded. */
 		ihtfyAds: { show(box: HTMLElement, key: string): void; adFree(): Promise<boolean> };
 	}
+	/** Set by app.html only on a fresh launch of the installed app; plays the exit from the launch screen. */
+	var launchExit: ((play: (overlay: HTMLElement) => Animation[]) => void) | undefined;
 }
 
 export {};

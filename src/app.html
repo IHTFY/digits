@@ -40,9 +40,108 @@
 				/* Without storage the page keeps its default theme. */
 			}
 		</script>
+		<style>
+			/* Installed-app launch: the first paint copies Chrome's launch screen (manifest background,
+			   maskable icon at 128px, name near the bottom), then launchExit() animates out of it. */
+			#launch {
+				display: none;
+			}
+			.launching #launch {
+				position: fixed;
+				inset: 0;
+				z-index: 2147483647;
+				display: grid;
+				place-items: center;
+			}
+			#launch-fill {
+				position: absolute;
+				inset: 0;
+				background: #1095c1;
+			}
+			/* The maskable icon draws the hash at 84 of its 128 px. */
+			#launch-icon {
+				position: relative;
+				width: 128px;
+				height: 128px;
+				padding: 22px;
+				color: #fff;
+			}
+			#launch-name {
+				position: absolute;
+				inset: auto 0 56px;
+				font:
+					24px/1 Roboto,
+					system-ui,
+					sans-serif;
+				text-align: center;
+				color: #fff;
+			}
+		</style>
+		<script>
+			// Plays once per fresh launch of the installed app: never in a browser tab, on reload, or on return.
+			(() => {
+				const root = document.documentElement;
+				try {
+					const nav = performance.getEntriesByType('navigation')[0];
+					const app = matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
+					if (!app || nav?.type !== 'navigate' || sessionStorage.getItem('launched')) return;
+					sessionStorage.setItem('launched', '1');
+				} catch {
+					return;
+				}
+				root.classList.add('launching');
+				const end = () => {
+					clearTimeout(fallback);
+					root.classList.remove('launching');
+					document.getElementById('launch')?.remove();
+				};
+				// The game never stays hidden behind the copy if it fails to call launchExit.
+				const fallback = setTimeout(end, 4000);
+				// play(overlay) starts the game's exit and returns its Web Animations.
+				window.launchExit = (play) => {
+					clearTimeout(fallback);
+					const overlay = document.getElementById('launch');
+					// Too late: the fallback already removed the copy.
+					if (!overlay) return;
+					let animations = [];
+					if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+						try {
+							animations = play(overlay);
+						} catch {
+							animations = [];
+						}
+					}
+					if (!animations.length) {
+						animations = [
+							overlay.animate(
+								{ opacity: [1, 0] },
+								{ duration: 200, easing: 'ease-out', fill: 'forwards' }
+							)
+						];
+					}
+					overlay.addEventListener('pointerdown', () => animations.forEach((a) => a.finish()), {
+						once: true
+					});
+					Promise.all(animations.map((a) => a.finished)).then(end, end);
+				};
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
+		<div id="launch" aria-hidden="true">
+			<div id="launch-fill"></div>
+			<svg id="launch-icon" viewBox="0 0 24 24">
+				<path
+					d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+				/>
+			</svg>
+			<span id="launch-name">Digits</span>
+		</div>
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>
