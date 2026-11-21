@@ -37,6 +37,8 @@
 	--pico-color: #dce5ea;
 	--pico-primary: #29b3dd;
 	--pico-primary-border: #29b3dd;
+	/* Brand-colored text under the pointer gets lighter here; the shared darker shade is too faint on the dark page. */
+	--pico-primary-hover: #63c9e8;
 }
 
 body {

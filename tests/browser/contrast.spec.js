@@ -49,39 +49,47 @@ for (const theme of ['light', 'dark']) {
 		await page.goto('/');
 		await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 		await expect(page.locator('.target-number')).not.toBeEmpty();
-		await page.locator('.number-button').first().click();
+		// Colors fade between states. Without the fades, each read is the settled color.
+		await page.addStyleTag({
+			content: '*, *::before, *::after { transition: none !important; }'
+		});
 
-		// The colors fade in, so each is read until it settles.
+		/**
+		 * @param {import('@playwright/test').Locator} locator
+		 * @param {string} name
+		 */
+		const readable = async (locator, name) =>
+			expect.soft(await contrast(locator), name).toBeGreaterThanOrEqual(4.5);
+
+		await page.locator('.number-button').first().click();
 		for (const selector of [
 			'.puzzle-tab.active',
 			'.progress-label > span:first-child',
 			'.solution-button',
 			'.number-button.selected'
 		]) {
-			await expect
-				.poll(() => contrast(page.locator(selector)), { message: selector })
-				.toBeGreaterThanOrEqual(4.5);
+			await readable(page.locator(selector), selector);
 		}
 
 		// A tab under the pointer shows its number in the text color over the tint.
 		const tab = page.locator('.puzzle-tab:not(.active)').first();
 		await tab.hover();
-		await expect
-			.poll(() => contrast(tab), { message: 'tab under the pointer' })
-			.toBeGreaterThanOrEqual(4.5);
+		await readable(tab, 'tab under the pointer');
+
+		// An outlined button under the pointer, or holding keyboard focus, takes the hover color.
+		const solution = page.locator('.solution-button');
+		await solution.hover();
+		await readable(solution, 'Show Solution under the pointer');
+		await page.mouse.move(0, 0);
+		await solution.focus();
+		await readable(solution, 'Show Solution with focus');
 
 		await page.getByRole('button', { name: 'Menu', exact: true }).click();
 		await page.getByRole('button', { name: 'How to Play' }).click();
 		await expect(page.getByRole('dialog')).toBeVisible();
 		for (const selector of ['.guide-eyebrow', '.guide-number.selected', '.guide-solution-button']) {
-			await expect
-				.poll(() => contrast(page.locator(selector)), { message: selector })
-				.toBeGreaterThanOrEqual(4.5);
+			await readable(page.locator(selector), selector);
 		}
-		await expect
-			.poll(() => contrast(page.getByRole('button', { name: 'Play', exact: true })), {
-				message: 'Play'
-			})
-			.toBeGreaterThanOrEqual(4.5);
+		await readable(page.getByRole('button', { name: 'Play', exact: true }), 'Play');
 	});
 }
