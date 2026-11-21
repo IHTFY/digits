@@ -179,6 +179,8 @@ a:focus-visible {
 /* The results screen: the result, the button, then the ad. */
 .results {
 	display: grid;
+	/* The column is as wide as the screen allows, so a box wider than it stays centered. */
+	grid-template-columns: minmax(0, 1fr);
 	justify-items: center;
 	align-content: start;
 	gap: 12px;
@@ -215,6 +217,16 @@ a:focus-visible {
 }
 .ad p {
 	margin: 32px 0 4px;
+}
+/* The results screen is measured, so the ad shows only where the whole stack fits without scrolling. */
+.results-screen {
+	container: results / size;
+}
+/* Shorter than the stack, as on a phone turned on its side, or narrower than the box: no ad. The stack is the 250px box, 110px of spacing and the button's border, and 8.55rem of text lines. The 300px box may reach into the 16px beside the results on a phone, but not past the screen's edge. */
+@container results (height < calc(360px + 8.55rem)) or (width < 268px) {
+	.ad {
+		display: none;
+	}
 }
 /* With an ad beside it, the game keeps its full width and the two center as one group. */
 .play-frame.with-ad {

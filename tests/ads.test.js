@@ -41,7 +41,15 @@ afterEach(() => {
 
 /** @type {any[][]} */
 let shown = [];
-const box = (isConnected = true) => /** @type {any} */ ({ isConnected });
+// A box has its width while it is on the page and the styles show it, and none otherwise.
+const box = (isConnected = true) =>
+	/** @type {any} */ ({
+		isConnected,
+		displayed: true,
+		get offsetWidth() {
+			return this.isConnected && this.displayed ? 300 : 0;
+		}
+	});
 const tick = () => new Promise((resolve) => setTimeout(resolve));
 // A fresh copy of the module each time, so its loader state starts empty.
 const loadAds = () => import(`../src/lib/ads.js?${imports++}`);
@@ -97,6 +105,21 @@ test('skips a box that left the page before the loader arrived', async () => {
 	scripts[0].dispatchEvent(new Event('load'));
 	await tick();
 	assert.deepEqual(shown, [[current, 'one']]);
+});
+
+test('skips a box the styles left out before the loader arrived', async () => {
+	const { showAd } = await loadAds();
+	const hidden = box();
+	const placed = showAd(hidden, 'one');
+	hidden.displayed = false;
+	scripts[0].dispatchEvent(new Event('load'));
+	assert.equal(await placed, false);
+	assert.deepEqual(shown, []);
+
+	// Showing again, it gets its ad.
+	hidden.displayed = true;
+	assert.equal(await showAd(hidden, 'one'), true);
+	assert.deepEqual(shown, [[hidden, 'one']]);
 });
 
 test('loadForBuyer loads nothing for a visitor without an ad-free token', async () => {
