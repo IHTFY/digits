@@ -574,7 +574,6 @@ dialog#instructions[open] {
 dialog#instructions::backdrop {
 	right: var(--play-ad-right, 0px);
 	background: rgba(17, 25, 31, 0.55);
-	backdrop-filter: blur(3px);
 }
 dialog#instructions article {
 	max-width: none;
