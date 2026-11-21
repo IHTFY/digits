@@ -122,6 +122,8 @@
 					}
 					const skip = () => animations.forEach((a) => a.finish());
 					overlay.addEventListener('pointerdown', skip, { once: true });
+					// A key acts on the game behind the copy, so the copy gets out of its way.
+					addEventListener('keydown', skip, { once: true });
 					// A turned phone moves the board away from where the animation was aimed.
 					screen.orientation?.addEventListener('change', skip, { once: true });
 					Promise.all(animations.map((a) => a.finished)).then(end, end);
