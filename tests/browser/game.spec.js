@@ -563,3 +563,33 @@ for (const [width, height] of [
 		await expect(dialog).toBeHidden();
 	});
 }
+
+test('the scoring cards in Help fit the dialog with text twice the size', async ({ page }) => {
+	await page.setViewportSize({ width: 360, height: 640 });
+	await openGame(page);
+	await page.addStyleTag({ content: 'html { font-size: 32px !important; }' });
+	await page.getByRole('button', { name: 'Menu', exact: true }).click();
+	await page.getByRole('button', { name: 'How to Play' }).click();
+	const dialog = page.getByRole('dialog');
+	await expect(dialog).toBeVisible();
+	await page.getByRole('heading', { name: 'Earn stars' }).scrollIntoViewIfNeeded();
+	expect(
+		await dialog.evaluate((element) => {
+			const grid = /** @type {Element} */ (element.querySelector('.guide-score-grid'));
+			const edge = grid.getBoundingClientRect().right;
+			return {
+				overflow: element.scrollWidth > element.clientWidth,
+				// Each card stays inside the grid, which stays inside the dialog's padding.
+				cardsOutside: [...grid.children].filter(
+					(card) => card.getBoundingClientRect().right > edge + 0.5
+				).length,
+				// Each label stays inside its own card.
+				labelsOutside: [...element.querySelectorAll('.guide-score-grid strong')].filter(
+					(label) =>
+						label.getBoundingClientRect().right >
+						/** @type {Element} */ (label.parentElement).getBoundingClientRect().right + 0.5
+				).length
+			};
+		})
+	).toEqual({ overflow: false, cardsOutside: 0, labelsOutside: 0 });
+});
