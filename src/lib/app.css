@@ -179,6 +179,8 @@ a:focus-visible {
 /* The results screen: the result, the button, then the ad. */
 .results {
 	display: grid;
+	/* The column is as wide as the screen allows, so a box wider than it stays centered. */
+	grid-template-columns: minmax(0, 1fr);
 	justify-items: center;
 	align-content: start;
 	gap: 12px;

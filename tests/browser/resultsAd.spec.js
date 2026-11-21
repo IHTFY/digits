@@ -127,9 +127,10 @@ const sizes = [
 	[390, 750],
 	[412, 800],
 	[1280, 800],
-	// The shortest phone that holds the whole stack, and a narrow one.
+	// The shortest phone that holds the whole stack, a narrow one, and one only as wide as the box.
 	[360, 565],
-	[320, 640]
+	[320, 640],
+	[300, 640]
 ];
 
 for (const [width, height] of sizes) {
