@@ -83,7 +83,8 @@
 				const root = document.documentElement;
 				try {
 					const nav = performance.getEntriesByType('navigation')[0];
-					const app = matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
+					// The manifest asks for standalone; a browser tab in F11 full screen reports fullscreen.
+					const app = matchMedia('(display-mode: standalone)').matches;
 					if (!app || nav?.type !== 'navigate' || sessionStorage.getItem('launched')) return;
 					sessionStorage.setItem('launched', '1');
 				} catch {
@@ -95,11 +96,11 @@
 					root.classList.remove('launching');
 					document.getElementById('launch')?.remove();
 				};
-				// The game never stays hidden behind the copy if it fails to call launchExit.
+				// The game never stays hidden behind the copy if it fails to call launchExit, or the
+				// exit fails to start.
 				const fallback = setTimeout(end, 4000);
 				// play(overlay) starts the game's exit and returns its Web Animations.
 				window.launchExit = (play) => {
-					clearTimeout(fallback);
 					const overlay = document.getElementById('launch');
 					// Too late: the fallback already removed the copy.
 					if (!overlay) return;
@@ -119,9 +120,10 @@
 							)
 						];
 					}
-					overlay.addEventListener('pointerdown', () => animations.forEach((a) => a.finish()), {
-						once: true
-					});
+					const skip = () => animations.forEach((a) => a.finish());
+					overlay.addEventListener('pointerdown', skip, { once: true });
+					// A turned phone moves the board away from where the animation was aimed.
+					screen.orientation?.addEventListener('change', skip, { once: true });
 					Promise.all(animations.map((a) => a.finished)).then(end, end);
 				};
 			})();
