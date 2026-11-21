@@ -127,8 +127,9 @@ const sizes = [
 	[390, 750],
 	[412, 800],
 	[1280, 800],
-	// The shortest phone that holds the whole stack.
-	[360, 565]
+	// The shortest phone that holds the whole stack, and a narrow one.
+	[360, 565],
+	[320, 640]
 ];
 
 for (const [width, height] of sizes) {
@@ -181,9 +182,10 @@ for (const [width, height] of [
 
 for (const [width, height] of [
 	[640, 360],
-	[360, 564]
+	[360, 564],
+	[280, 640]
 ]) {
-	test(`a ${width}×${height} screen, too short for the box, shows none and asks for the ad once the box fits`, async ({
+	test(`a ${width}×${height} screen, too small for the box, shows none and asks for the ad once the box fits`, async ({
 		page
 	}) => {
 		const loads = await stubLoader(page);
@@ -200,6 +202,36 @@ for (const [width, height] of [
 	});
 }
 
+test('a phone turned on its side while the ad loader is arriving gets its ad only when upright again', async ({
+	page
+}) => {
+	await stubLoader(page);
+	// The loader is held back until the phone has been turned.
+	let requested = false;
+	let release = () => {};
+	const held = new Promise((resolve) => (release = () => resolve(undefined)));
+	await page.route('https://ihtfy.com/ads/v1.js', async (route) => {
+		requested = true;
+		await held;
+		await route.fallback();
+	});
+	await page.setViewportSize({ width: 360, height: 640 });
+	await finishTheDay(page);
+	await expect(page.locator('[data-ad-size]')).toBeVisible();
+	await expect.poll(() => requested).toBe(true);
+
+	await page.setViewportSize({ width: 640, height: 360 });
+	await expectNoAdShowing(page, 640, 360);
+	release();
+	await page.waitForFunction(() => window.ihtfyAds);
+	// A request for the hidden box would show up by now: there is none.
+	await page.waitForTimeout(500);
+	expect(await page.evaluate(() => window.shown)).toHaveLength(0);
+
+	await page.setViewportSize({ width: 360, height: 640 });
+	await expectAdInView(page, 360, 640);
+});
+
 test('a buyer gets no box and no results-screen space for it', async ({ page }) => {
 	await stubLoader(page);
 	await page.addInitScript(() => localStorage.setItem('ihtfy-ad-free', 'token'));
@@ -215,6 +247,7 @@ test('opening the page on a finished day shows no results screen and no box', as
 	await page.setViewportSize({ width: 360, height: 640 });
 	await finishTheDay(page);
 	await expect(page.locator('.results')).toBeVisible();
+	await page.waitForFunction(() => window.shown?.length === 1);
 	await page.reload();
 	await expect(page.locator('.target-number')).not.toBeEmpty();
 	await page.waitForTimeout(1600);

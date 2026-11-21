@@ -8,14 +8,19 @@
 	const [width, height] = $derived(ad.size.split('x'));
 
 	// The styles leave the box out where the screen cannot hold all of it, and bring it back
-	// where it can, as after a rotation. The ad is asked for once, when the box first shows.
+	// where it can, as after a rotation. The ad is asked for while the box shows, until the
+	// loader takes it: a box that went away while the loader was arriving is asked for again
+	// when it next shows.
 	$effect(() => {
 		if (!box) return;
 		const target = box;
-		const observer = new ResizeObserver(() => {
-			if (!target.offsetWidth) return;
-			observer.disconnect();
-			showAd(target, adKey);
+		let asking = false;
+		const observer = new ResizeObserver(async () => {
+			if (asking || !target.offsetWidth) return;
+			asking = true;
+			const placed = await showAd(target, adKey);
+			asking = false;
+			if (placed) observer.disconnect();
 		});
 		observer.observe(target);
 		return () => observer.disconnect();

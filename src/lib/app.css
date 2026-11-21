@@ -220,8 +220,8 @@ a:focus-visible {
 .results-screen {
 	container: results / size;
 }
-/* Shorter than the stack, as on a phone turned on its side: no ad. The stack is the 250px box, 110px of spacing and the button's border, and 8.55rem of text lines. */
-@container results (height < calc(360px + 8.55rem)) {
+/* Shorter than the stack, as on a phone turned on its side, or narrower than the box: no ad. The stack is the 250px box, 110px of spacing and the button's border, and 8.55rem of text lines. The 300px box may reach into the 16px beside the results on a phone, but not past the screen's edge. */
+@container results (height < calc(360px + 8.55rem)) or (width < 268px) {
 	.ad {
 		display: none;
 	}

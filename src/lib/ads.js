@@ -84,7 +84,8 @@ export function loadForBuyer() {
 }
 
 /**
- * Fills `box` with an ad for the finished day named `key`; offline or on failure it stays empty.
+ * Fills `box` with an ad for the finished day named `key`; offline, on failure, or when the box
+ * isn't showing once the loader has arrived, it stays empty.
  * Resolves to whether the loader was asked to place the ad.
  * @param {HTMLElement} box
  * @param {string} key
@@ -94,7 +95,8 @@ export function showAd(box, key) {
 	if (!navigator.onLine) return Promise.resolve(false);
 	return load().then(
 		() => {
-			if (!box.isConnected) return false;
+			// Off the page, or left out by the styles: either way the box has no width, and gets no ad.
+			if (!box.offsetWidth) return false;
 			try {
 				window.ihtfyAds.show(box, key);
 				return true;
