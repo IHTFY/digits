@@ -575,13 +575,14 @@ test('the scoring cards in Help fit the dialog with text twice the size', async 
 	await page.getByRole('heading', { name: 'Earn stars' }).scrollIntoViewIfNeeded();
 	expect(
 		await dialog.evaluate((element) => {
-			const edge = element.getBoundingClientRect().right;
-			const outside = (/** @type {Element} */ part) =>
-				part.getBoundingClientRect().right > edge + 0.5;
+			const grid = /** @type {Element} */ (element.querySelector('.guide-score-grid'));
+			const edge = grid.getBoundingClientRect().right;
 			return {
 				overflow: element.scrollWidth > element.clientWidth,
-				cardsOutside: [...element.querySelectorAll('.guide-score-grid > div')].filter(outside)
-					.length,
+				// Each card stays inside the grid, which stays inside the dialog's padding.
+				cardsOutside: [...grid.children].filter(
+					(card) => card.getBoundingClientRect().right > edge + 0.5
+				).length,
 				// Each label stays inside its own card.
 				labelsOutside: [...element.querySelectorAll('.guide-score-grid strong')].filter(
 					(label) =>
