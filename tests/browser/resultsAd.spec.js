@@ -203,6 +203,35 @@ for (const [width, height] of [
 	});
 }
 
+// A root font size above the default is how an enlarged text setting reaches the page. The heading
+// and the level line wrap, so the stack is taller than the styles estimate.
+for (const [width, height, rootPx] of [
+	[360, 640, 24],
+	[320, 640, 22]
+]) {
+	test(`a ${width}×${height} screen with ${rootPx}px text has the whole ad box in view, or no box and no request`, async ({
+		page
+	}) => {
+		await stubLoader(page);
+		await page.addInitScript((px) => {
+			document.addEventListener('DOMContentLoaded', () => {
+				document.documentElement.style.fontSize = `${px}px`;
+			});
+		}, rootPx);
+		await page.setViewportSize({ width, height });
+		await finishTheDay(page);
+		await expect(page.locator('.results')).toBeVisible();
+		await page.waitForTimeout(500);
+		const box = page.locator('[data-ad-size]');
+		if (await box.isVisible()) {
+			await expectAdInView(page, width, height);
+		} else {
+			await expectNoAdShowing(page, width, height);
+			expect(await page.evaluate(() => window.shown ?? [])).toHaveLength(0);
+		}
+	});
+}
+
 test('a phone turned on its side while the ad loader is arriving gets its ad only when upright again', async ({
 	page
 }) => {

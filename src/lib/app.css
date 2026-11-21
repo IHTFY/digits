@@ -235,6 +235,10 @@ a:focus-visible {
 		display: none;
 	}
 }
+/* Set by the ad box's script when larger text puts the box's bottom edge below the screen, which the estimate above can't see. */
+.ad.unfit {
+	display: none;
+}
 /* With an ad beside it, the game keeps its full width and the two center as one group. */
 .play-frame.with-ad {
 	display: grid;
