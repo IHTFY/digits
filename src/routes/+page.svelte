@@ -177,7 +177,7 @@
 			</div>
 		</header>
 		<main hidden={results}><Board /></main>
-		{#if results}<main><Results onreview={review} /></main>{/if}
+		{#if results}<main class="results-screen"><Results onreview={review} /></main>{/if}
 	</div>
 </PlayAd>
 <Instructions />

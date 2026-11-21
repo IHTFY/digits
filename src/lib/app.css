@@ -216,6 +216,16 @@ a:focus-visible {
 .ad p {
 	margin: 32px 0 4px;
 }
+/* The results screen is measured, so the ad shows only where the whole stack fits without scrolling. */
+.results-screen {
+	container: results / size;
+}
+/* Shorter than the stack, as on a phone turned on its side: no ad. The stack is the 250px box, 110px of spacing and the button's border, and 8.55rem of text lines. */
+@container results (height < calc(360px + 8.55rem)) {
+	.ad {
+		display: none;
+	}
+}
 /* With an ad beside it, the game keeps its full width and the two center as one group. */
 .play-frame.with-ad {
 	display: grid;

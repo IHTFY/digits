@@ -7,8 +7,18 @@
 	let box = $state();
 	const [width, height] = $derived(ad.size.split('x'));
 
+	// The styles leave the box out where the screen cannot hold all of it, and bring it back
+	// where it can, as after a rotation. The ad is asked for once, when the box first shows.
 	$effect(() => {
-		if (box) showAd(box, adKey);
+		if (!box) return;
+		const target = box;
+		const observer = new ResizeObserver(() => {
+			if (!target.offsetWidth) return;
+			observer.disconnect();
+			showAd(target, adKey);
+		});
+		observer.observe(target);
+		return () => observer.disconnect();
 	});
 </script>
 
