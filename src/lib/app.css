@@ -706,11 +706,13 @@ dialog#instructions p {
 	background: var(--pico-secondary-background);
 }
 .guide-tips {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
+	display: flex;
+	/* Two across; with enlarged text the second tip moves below the first. */
+	flex-wrap: wrap;
 	gap: 24px;
 }
 .guide-tips section {
+	flex: 1 1 7rem;
 	margin: 0;
 }
 .guide-operators {
@@ -751,9 +753,14 @@ dialog#instructions p {
 }
 .guide-solution {
 	display: flex;
+	/* The text moves below the label once less than 8rem is left beside it. */
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 14px;
 	margin-top: 18px;
+}
+.guide-solution p {
+	flex: 1 1 8rem;
 }
 .guide-solution-button {
 	flex-shrink: 0;
@@ -786,13 +793,19 @@ dialog#instructions footer button {
 		margin: 20px -20px -20px;
 	}
 	.guide-tips {
-		grid-template-columns: 1fr;
+		flex-direction: column;
 		gap: 18px;
+	}
+	.guide-tips section {
+		flex-basis: auto;
 	}
 	.guide-solution {
 		flex-direction: column;
 		align-items: start;
 		gap: 8px;
+	}
+	.guide-solution p {
+		flex-basis: auto;
 	}
 }
 /* Feedback stays inside each element, preserving the game grid during play. */
