@@ -10,15 +10,18 @@
 	// The styles leave the box out where the screen clearly cannot hold all of it, and bring it
 	// back where it can, as after a rotation. Larger text can still push the box past the bottom
 	// of the screen, which the styles do not see, so the box's real place is measured: it is
-	// shown to be measured, and left out again unless it ends within the screen. The ad is asked
-	// for while the box shows, until the loader takes it: a box that went away while the loader
-	// was arriving is asked for again when it next shows.
+	// shown to be measured, and left out again unless it ends within the screen. The
+	// measuring goes on for as long as the box is on the page, since a narrower window or a text
+	// size change can move the box. The ad is asked for once, while the box shows, until the
+	// loader takes it: a box that went away while the loader was arriving is asked for again
+	// when it next shows.
 	$effect(() => {
 		if (!box) return;
 		const target = box;
 		const aside = /** @type {HTMLElement} */ (target.parentElement);
 		const root = document.documentElement;
 		let asking = false;
+		let placed = false;
 		const fits = () => {
 			aside.classList.remove('unfit');
 			if (!target.offsetWidth) return false;
@@ -27,15 +30,17 @@
 			return fit;
 		};
 		const observer = new ResizeObserver(async () => {
-			if (!fits() || asking) return;
+			if (!fits() || asking || placed) return;
 			asking = true;
-			const placed = await showAd(target, adKey);
+			placed = await showAd(target, adKey);
 			asking = false;
-			if (placed) observer.disconnect();
 		});
-		// The box has no size while it is left out, so the screen's size brings it back.
+		// The box has no size while it is left out, so the screen's size brings it back, and so
+		// does the text above it, which changes size with the text size.
 		observer.observe(target);
 		observer.observe(root);
+		for (const part of /** @type {HTMLElement} */ (aside.parentElement).children)
+			if (part !== aside) observer.observe(part);
 		return () => observer.disconnect();
 	});
 </script>

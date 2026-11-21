@@ -232,6 +232,48 @@ for (const [width, height, rootPx] of [
 	});
 }
 
+test('a window narrowed until the text wraps hides a shown ad box, and shows it again without a second request', async ({
+	page
+}) => {
+	await stubLoader(page);
+	await page.addInitScript(() => {
+		document.addEventListener('DOMContentLoaded', () => {
+			document.documentElement.style.fontSize = '22px';
+		});
+	});
+	await page.setViewportSize({ width: 360, height: 640 });
+	await finishTheDay(page);
+	await expectAdInView(page, 360, 640);
+
+	// Narrower, the heading wraps and the box would end below the screen.
+	await page.setViewportSize({ width: 320, height: 640 });
+	await expectNoAdShowing(page, 320, 640);
+	expect(await page.evaluate(() => window.shown)).toHaveLength(1);
+
+	await page.setViewportSize({ width: 360, height: 640 });
+	await expectAdInView(page, 360, 640);
+});
+
+test('text made smaller at the same window size brings back a box that enlarged text left out, with one request', async ({
+	page
+}) => {
+	await stubLoader(page);
+	await page.addInitScript(() => {
+		document.addEventListener('DOMContentLoaded', () => {
+			document.documentElement.style.fontSize = '24px';
+		});
+	});
+	await page.setViewportSize({ width: 360, height: 640 });
+	await finishTheDay(page);
+	await expect(page.locator('.results')).toBeVisible();
+	await expectNoAdShowing(page, 360, 640);
+	await page.waitForTimeout(500);
+	expect(await page.evaluate(() => window.shown ?? [])).toHaveLength(0);
+
+	await page.evaluate(() => (document.documentElement.style.fontSize = '16px'));
+	await expectAdInView(page, 360, 640);
+});
+
 test('a phone turned on its side while the ad loader is arriving gets its ad only when upright again', async ({
 	page
 }) => {
