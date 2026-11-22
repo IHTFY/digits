@@ -46,7 +46,7 @@ test('a touch during the launch only skips it, and the same touch afterward work
 	const y = box.y + box.height / 2;
 	expect(
 		await page.evaluate(
-			([x, y]) => document.elementFromPoint(x, y)?.closest('#launch') !== null,
+			([x, y]) => Boolean(document.elementFromPoint(x, y)?.closest('#launch')),
 			[x, y]
 		)
 	).toBe(true);

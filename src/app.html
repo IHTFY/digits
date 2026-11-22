@@ -122,8 +122,8 @@
 						if (event.type === 'pointerdown' && event.isPrimary && event.button === 0) {
 							const spare = () => removeEventListener('click', eat, true);
 							addEventListener('click', eat, { capture: true, once: true });
-							// Some browsers send no click once the copy is gone; then the next press or key is new input.
-							for (const type of ['pointercancel', 'pointerdown', 'keydown']) {
+							// Some browsers send no click once the copy is gone; then the next press is a new tap.
+							for (const type of ['pointercancel', 'pointerdown']) {
 								addEventListener(type, spare, { capture: true, once: true });
 							}
 							setTimeout(spare, 1000);
@@ -131,6 +131,8 @@
 						skip();
 					};
 					const eat = (event) => {
+						// A key or a screen reader clicks with no pointer behind it (detail 0): that is new input.
+						if (!event.detail) return;
 						event.preventDefault();
 						event.stopImmediatePropagation();
 					};
