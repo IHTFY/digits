@@ -121,7 +121,7 @@
 						// A touch's click comes after the copy is gone, aimed at whatever is under the finger.
 						if (event.type === 'pointerdown' && event.isPrimary && event.button === 0) {
 							const spare = () => removeEventListener('click', eat, true);
-							addEventListener('click', eat, { capture: true, once: true });
+							addEventListener('click', eat, true);
 							// Some browsers send no click once the copy is gone; then the next press is a new tap.
 							for (const type of ['pointercancel', 'pointerdown']) {
 								addEventListener(type, spare, { capture: true, once: true });
@@ -133,6 +133,7 @@
 					const eat = (event) => {
 						// A key or a screen reader clicks with no pointer behind it (detail 0): that is new input.
 						if (!event.detail) return;
+						removeEventListener('click', eat, true);
 						event.preventDefault();
 						event.stopImmediatePropagation();
 					};
