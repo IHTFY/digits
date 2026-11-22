@@ -63,26 +63,33 @@ test('a touch during the launch only skips it, and the same touch afterward work
 	await context.close();
 });
 
-test('a held mouse press during the launch only skips it, and the next click works', async ({
-	page
-}) => {
-	await page.addInitScript(installed);
-	await page.addInitScript(slow);
-	await page.goto('/');
-	await page.waitForFunction(
-		() => (document.getElementById('launch-fill')?.getAnimations().length ?? 0) > 0
-	);
-	const toggle = page.getByRole('button', { name: /^Switch to (dark|light) theme$/ });
-	const label = await toggle.getAttribute('aria-label');
-	const box = await toggle.boundingBox();
-	if (!box) throw new Error('the theme switch has no box');
-	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-	await page.mouse.down();
-	await expect(page.locator('#launch')).toHaveCount(0, { timeout: 5000 });
-	// The copy is gone before the release, so this press may send no click at all.
-	await page.mouse.up();
-	await expect(toggle).toHaveAttribute('aria-label', /** @type {string} */ (label));
+for (const next of ['click', 'key']) {
+	test(`a held mouse press during the launch only skips it, and the next ${next} works`, async ({
+		page
+	}) => {
+		await page.addInitScript(installed);
+		await page.addInitScript(slow);
+		await page.goto('/');
+		await page.waitForFunction(
+			() => (document.getElementById('launch-fill')?.getAnimations().length ?? 0) > 0
+		);
+		const toggle = page.getByRole('button', { name: /^Switch to (dark|light) theme$/ });
+		const label = await toggle.getAttribute('aria-label');
+		const box = await toggle.boundingBox();
+		if (!box) throw new Error('the theme switch has no box');
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		await page.mouse.down();
+		await expect(page.locator('#launch')).toHaveCount(0, { timeout: 5000 });
+		// The copy is gone before the release, so this press may send no click at all.
+		await page.mouse.up();
+		await expect(toggle).toHaveAttribute('aria-label', /** @type {string} */ (label));
 
-	await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-	await expect(toggle).not.toHaveAttribute('aria-label', /** @type {string} */ (label));
-});
+		if (next === 'click') {
+			await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+		} else {
+			await toggle.focus();
+			await page.keyboard.press('Enter');
+		}
+		await expect(toggle).not.toHaveAttribute('aria-label', /** @type {string} */ (label));
+	});
+}

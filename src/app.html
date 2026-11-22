@@ -122,9 +122,10 @@
 						if (event.type === 'pointerdown' && event.isPrimary && event.button === 0) {
 							const spare = () => removeEventListener('click', eat, true);
 							addEventListener('click', eat, { capture: true, once: true });
-							addEventListener('pointercancel', spare, { once: true });
-							// Some browsers send no click once the copy is gone; then the next press is a new tap.
-							addEventListener('pointerdown', spare, { capture: true, once: true });
+							// Some browsers send no click once the copy is gone; then the next press or key is new input.
+							for (const type of ['pointercancel', 'pointerdown', 'keydown']) {
+								addEventListener(type, spare, { capture: true, once: true });
+							}
 							setTimeout(spare, 1000);
 						}
 						skip();
