@@ -114,12 +114,33 @@
 						];
 					}
 					const skip = () => animations.forEach((a) => a.finish());
-					const once = { once: true, signal: ended.signal };
-					overlay.addEventListener('pointerdown', skip, once);
-					// A key acts on the game behind the copy, so the copy gets out of its way.
-					addEventListener('keydown', skip, once);
+					// While the copy shows, a tap or key only skips it: nothing behind it reacts.
+					const swallow = (event) => {
+						event.preventDefault();
+						event.stopImmediatePropagation();
+						// A touch's click comes after the copy is gone, aimed at whatever is under the finger.
+						if (event.type === 'pointerdown' && event.isPrimary && event.button === 0) {
+							const spare = () => removeEventListener('click', eat, true);
+							addEventListener('click', eat, { capture: true, once: true });
+							addEventListener('pointercancel', spare, { once: true });
+							// Some browsers send no click once the copy is gone; then the next press is a new tap.
+							addEventListener('pointerdown', spare, { capture: true, once: true });
+							setTimeout(spare, 1000);
+						}
+						skip();
+					};
+					const eat = (event) => {
+						event.preventDefault();
+						event.stopImmediatePropagation();
+					};
+					const during = { capture: true, signal: ended.signal };
+					addEventListener('pointerdown', swallow, during);
+					addEventListener('keydown', swallow, during);
 					// A turned phone moves the board away from where the animation was aimed.
-					screen.orientation?.addEventListener('change', skip, once);
+					screen.orientation?.addEventListener('change', skip, {
+						once: true,
+						signal: ended.signal
+					});
 					Promise.all(animations.map((a) => a.finished)).then(end, end);
 				};
 			})();
