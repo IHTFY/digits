@@ -139,3 +139,68 @@ for (const next of ['click', 'key']) {
 		await expect(toggle).not.toHaveAttribute('aria-label', /** @type {string} */ (label));
 	});
 }
+
+// A press can start before the game calls launchExit, while its scripts still load: the guard is armed with
+// the launching state, so the press only skips the launch, and its release over the switch changes nothing.
+for (const input of ['touch', 'mouse']) {
+	test(`a ${input} press made while the page loads only skips the launch`, async ({
+		browser,
+		browserName
+	}) => {
+		test.skip(
+			input === 'touch' && browserName !== 'chromium',
+			'only Chromium can hold a touch down and lift it later'
+		);
+		const context = await browser.newContext({
+			hasTouch: input === 'touch',
+			viewport: { width: 390, height: 844 },
+			// A service worker would serve the scripts past the route that holds them back.
+			serviceWorkers: 'block'
+		});
+		await context.addInitScript(installed);
+		await context.addInitScript(slow);
+		const page = await context.newPage();
+
+		// Find the switch on a plain load first: the press goes there before it is drawn.
+		await page.goto('/');
+		const toggle = page.getByRole('button', { name: /^Switch to (dark|light) theme$/ });
+		const label = await toggle.getAttribute('aria-label');
+		const box = await toggle.boundingBox();
+		if (!box) throw new Error('the theme switch has no box');
+		const at = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+
+		// A fresh tab launches again; its scripts wait until the press is down.
+		const loading = await context.newPage();
+		await page.close();
+		let release = () => {};
+		const held = new Promise((resolve) => (release = resolve));
+		await loading.route('**/*', async (route) => {
+			if (route.request().resourceType() === 'script') await held;
+			await route.fallback();
+		});
+		await loading.goto('/', { waitUntil: 'commit' });
+		await loading.waitForFunction(() => document.documentElement.classList.contains('launching'));
+		const cdp = input === 'touch' ? await context.newCDPSession(loading) : null;
+		if (cdp) {
+			await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [at] });
+		} else {
+			await loading.mouse.move(at.x, at.y);
+			await loading.mouse.down();
+		}
+		release();
+		await expect(loading.locator('#launch')).toHaveCount(0, { timeout: 10000 });
+		const switchAgain = loading.getByRole('button', { name: /^Switch to (dark|light) theme$/ });
+		await expect(switchAgain).toHaveAttribute('aria-label', /** @type {string} */ (label));
+		if (cdp) await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+		else await loading.mouse.up();
+		await loading.evaluate(() => new Promise((resolve) => setTimeout(resolve, 300)));
+		await expect(switchAgain).toHaveAttribute('aria-label', /** @type {string} */ (label));
+
+		// The guard drops a second after the release, so the next press works.
+		await loading.evaluate(() => new Promise((resolve) => setTimeout(resolve, 1200)));
+		if (cdp) await loading.touchscreen.tap(at.x, at.y);
+		else await loading.mouse.click(at.x, at.y);
+		await expect(switchAgain).not.toHaveAttribute('aria-label', /** @type {string} */ (label));
+		await context.close();
+	});
+}
