@@ -63,6 +63,52 @@ test('a touch during the launch only skips it, and the same touch afterward work
 	await context.close();
 });
 
+// A touch held past the guard's old one-second timer, as in a long press, still makes its click on release.
+test('a touch held for over a second during the launch is still covered when it lifts', async ({
+	browser,
+	browserName
+}) => {
+	test.skip(browserName !== 'chromium', 'only Chromium can hold a touch down and lift it later');
+	const context = await browser.newContext({
+		hasTouch: true,
+		viewport: { width: 390, height: 844 }
+	});
+	const page = await context.newPage();
+	await page.addInitScript(installed);
+	// Only the animations slow down: the guard's timer must run at its real speed to show the bug.
+	await page.addInitScript(() => {
+		const animate = Element.prototype.animate;
+		Element.prototype.animate = function (keyframes, options) {
+			const animation = animate.call(this, keyframes, options);
+			animation.playbackRate = 0.1;
+			return animation;
+		};
+	});
+	await page.goto('/');
+	await page.waitForFunction(
+		() => (document.getElementById('launch-fill')?.getAnimations().length ?? 0) > 0
+	);
+	const toggle = page.getByRole('button', { name: /^Switch to (dark|light) theme$/ });
+	const label = await toggle.getAttribute('aria-label');
+	const box = await toggle.boundingBox();
+	if (!box) throw new Error('the theme switch has no box');
+	const touchPoints = [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }];
+	const cdp = await context.newCDPSession(page);
+
+	await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints });
+	await expect(page.locator('#launch')).toHaveCount(0, { timeout: 5000 });
+	await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 1500)));
+	await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+	await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 300)));
+	await expect(toggle).toHaveAttribute('aria-label', /** @type {string} */ (label));
+
+	// The guard drops a second after the release, so the same touch then works.
+	await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 1200)));
+	await page.touchscreen.tap(touchPoints[0].x, touchPoints[0].y);
+	await expect(toggle).not.toHaveAttribute('aria-label', /** @type {string} */ (label));
+	await context.close();
+});
+
 for (const next of ['click', 'key']) {
 	test(`a held mouse press during the launch only skips it, and the next ${next} works`, async ({
 		page

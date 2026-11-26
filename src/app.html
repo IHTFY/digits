@@ -120,13 +120,23 @@
 						event.stopImmediatePropagation();
 						// A touch's click comes after the copy is gone, aimed at whatever is under the finger.
 						if (event.type === 'pointerdown' && event.isPrimary && event.button === 0) {
-							const spare = () => removeEventListener('click', eat, true);
+							const { pointerId } = event;
+							let timer;
+							const spare = () => {
+								clearTimeout(timer);
+								removeEventListener('click', eat, true);
+								removeEventListener('pointerup', lifted, true);
+							};
+							// A long hold stays covered: the wait for a click starts at this touch's release.
+							const lifted = (up) => {
+								if (up.pointerId === pointerId) timer = setTimeout(spare, 1000);
+							};
 							addEventListener('click', eat, true);
+							addEventListener('pointerup', lifted, true);
 							// Some browsers send no click once the copy is gone; then the next press is a new tap.
 							for (const type of ['pointercancel', 'pointerdown']) {
 								addEventListener(type, spare, { capture: true, once: true });
 							}
-							setTimeout(spare, 1000);
 						}
 						skip();
 					};
