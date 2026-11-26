@@ -89,6 +89,56 @@
 					root.classList.remove('launching');
 					document.getElementById('launch')?.remove();
 				};
+				// The exit's Web Animations, once launchExit has started them.
+				let animations = [];
+				// A tap before the exit starts is remembered, and the exit then skips straight to its end.
+				let skipped = false;
+				const skip = () => {
+					skipped = true;
+					animations.forEach((a) => a.finish());
+				};
+				// Drops the click guard of the last press; a new press replaces it.
+				let disarm = () => {};
+				// While the copy shows, a tap or key only skips it: nothing behind it reacts.
+				const swallow = (event) => {
+					event.preventDefault();
+					event.stopImmediatePropagation();
+					// A touch's click comes after the copy is gone, aimed at whatever is under the finger.
+					if (event.type === 'pointerdown' && event.isPrimary && event.button === 0) {
+						// The last press's timer must not later drop the guard this press arms.
+						disarm();
+						const { pointerId } = event;
+						let timer;
+						const spare = () => {
+							clearTimeout(timer);
+							removeEventListener('click', eat, true);
+							removeEventListener('pointerup', lifted, true);
+						};
+						// A long hold stays covered: the wait for a click starts at this touch's release.
+						const lifted = (up) => {
+							if (up.pointerId === pointerId) timer = setTimeout(spare, 1000);
+						};
+						addEventListener('click', eat, true);
+						addEventListener('pointerup', lifted, true);
+						// Some browsers send no click once the copy is gone; then the next press is a new tap.
+						for (const type of ['pointercancel', 'pointerdown']) {
+							addEventListener(type, spare, { capture: true, once: true });
+						}
+						disarm = spare;
+					}
+					skip();
+				};
+				const eat = (event) => {
+					// A key or a screen reader clicks with no pointer behind it (detail 0): that is new input.
+					if (!event.detail) return;
+					removeEventListener('click', eat, true);
+					event.preventDefault();
+					event.stopImmediatePropagation();
+				};
+				// Armed with the launching state, so a press made while the page loads is covered too.
+				const during = { capture: true, signal: ended.signal };
+				addEventListener('pointerdown', swallow, during);
+				addEventListener('keydown', swallow, during);
 				// The game never stays hidden behind the copy if it fails to call launchExit, or the
 				// exit fails to start.
 				const fallback = setTimeout(end, 4000);
@@ -97,7 +147,6 @@
 					const overlay = document.getElementById('launch');
 					// Too late: the fallback already removed the copy.
 					if (!overlay) return;
-					let animations = [];
 					if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
 						try {
 							animations = play(overlay);
@@ -113,43 +162,7 @@
 							)
 						];
 					}
-					const skip = () => animations.forEach((a) => a.finish());
-					// While the copy shows, a tap or key only skips it: nothing behind it reacts.
-					const swallow = (event) => {
-						event.preventDefault();
-						event.stopImmediatePropagation();
-						// A touch's click comes after the copy is gone, aimed at whatever is under the finger.
-						if (event.type === 'pointerdown' && event.isPrimary && event.button === 0) {
-							const { pointerId } = event;
-							let timer;
-							const spare = () => {
-								clearTimeout(timer);
-								removeEventListener('click', eat, true);
-								removeEventListener('pointerup', lifted, true);
-							};
-							// A long hold stays covered: the wait for a click starts at this touch's release.
-							const lifted = (up) => {
-								if (up.pointerId === pointerId) timer = setTimeout(spare, 1000);
-							};
-							addEventListener('click', eat, true);
-							addEventListener('pointerup', lifted, true);
-							// Some browsers send no click once the copy is gone; then the next press is a new tap.
-							for (const type of ['pointercancel', 'pointerdown']) {
-								addEventListener(type, spare, { capture: true, once: true });
-							}
-						}
-						skip();
-					};
-					const eat = (event) => {
-						// A key or a screen reader clicks with no pointer behind it (detail 0): that is new input.
-						if (!event.detail) return;
-						removeEventListener('click', eat, true);
-						event.preventDefault();
-						event.stopImmediatePropagation();
-					};
-					const during = { capture: true, signal: ended.signal };
-					addEventListener('pointerdown', swallow, during);
-					addEventListener('keydown', swallow, during);
+					if (skipped) skip();
 					// A turned phone moves the board away from where the animation was aimed.
 					screen.orientation?.addEventListener('change', skip, {
 						once: true,
